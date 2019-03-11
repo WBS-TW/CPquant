@@ -5,7 +5,7 @@ library(plotly)
 library(DT)
 library(crosstalk)
 
-
+options(shiny.maxRequestSize=2000*1024^2) 
 
 shinyServer(function(input, output, session) {
   
