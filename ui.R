@@ -4,42 +4,39 @@ library(dplyr)
 library(plotly)
 library(DT)
 library(crosstalk)
+library(readxl)
 
 navbarPage("CPquant: Interactive quantification and exploration of CP data",
   theme = shinytheme('spacelab'),
-  tabPanel("Data",
+  tabPanel("Data Processing",
            sidebarLayout(
              sidebarPanel(
-               fileInput("file_1", "Choose CSV File",
+               fileInput("file_1", "Choose mzXML File",
                          multiple = FALSE,
-                         accept = c("text/csv",
-                                    "text/comma-separated-values,text/plain",
-                                    ".csv")),
+                         accept = c(".mzXML")),
                tags$hr(),
-               checkboxInput("header", "Header", TRUE),
-               radioButtons("sep", "Separator",
-                            choices = c(Comma = ",",
-                                        Semicolon = ";",
-                                        Tab = "\t"),
-                            selected = ","),
-               radioButtons("quote", "Quote",
-                            choices = c(None = "",
-                                        "Double Quote" = '"',
-                                        "Single Quote" = "'"),
-                            selected = '"'),
+               selectInput("methods_peak", "Peak picking methods", choices = c("Method1", "Method2", "Method3")),
                tags$hr(),
                radioButtons("disp", "Display",
                             choices = c(Head = "head",
                                         All = "all"),
                             selected = "head"),
-               actionButton("go_1", "Upload")
+               actionButton("go_1", "Process")
              ),
              mainPanel(
                DT::DTOutput("dt_1")
              )
+           )),
+  tabPanel("Quantification",
+           sidebarLayout(
+             sidebarPanel(
+               selectInput("methods_quant", "Quantification method", choices = c("Quant1", "Quant2", "Quant3"))
+             ),
+             mainPanel()
+           )
            ),
-  tabPanel("Quantification"),
-  tabPanel("Visualize"),
+  tabPanel("Visualization"),
+  tabPanel("Statistical analysis"),
   tabPanel("Help")
 )
-)
+
