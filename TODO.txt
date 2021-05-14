@@ -1,0 +1,2 @@
+
+Use brushing to select peak points(scans) to integrate? 

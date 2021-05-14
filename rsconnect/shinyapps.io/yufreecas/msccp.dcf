@@ -1,0 +1,13 @@
+name: msccp
+title: msccp
+username:
+account: yufreecas
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 228126
+bundleId: 1043435
+url: https://yufreecas.shinyapps.io/msccp/
+when: 1508896339.6049
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: Archive|sample|standard
