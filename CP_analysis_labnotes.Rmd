@@ -1,0 +1,11 @@
+---
+title: "Labnotes on CP analysis"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# Using GC-ECNI-orbitrap-HRAMS
+
+Add figure of comparison between different methane gas and eV.
