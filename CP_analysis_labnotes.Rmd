@@ -1,11 +1,92 @@
 ---
 title: "Labnotes on CP analysis"
-output: html_notebook
-editor_options: 
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+editor_options:
   chunk_output_type: console
 ---
 
 
-# Using GC-ECNI-orbitrap-HRAMS
+```{r startup}
 
-Add figure of comparison between different methane gas and eV.
+library(tidyverse)
+library(readxl)
+library(rcdk)
+library(enviPat)
+data("isotopes")
+#library(IsoSpecR)
+
+```
+
+
+```{r, echo=FALSE,eval=FALSE}
+
+# CnH(2n+2-x)Clx
+
+
+
+C <- 13
+Cl <- 10
+H <- 2*C+2-Cl
+
+CP_formula <- paste0("C", C, "H", H, "Cl", Cl)
+CP_formula
+
+CP_isotopes <- isopattern(isotopes, CP_formula, threshold = 0.01, plotit = FALSE, charge = -1) %>% as.data.frame()
+
+CP_isotopes[1] <- CP_isotopes[1] - 1.007825
+
+
+```
+
+
+# Optimization of GC-ECNI-orbitrap-HRAMS for CPs
+
+For SCCPs: the different electron energies and CI gas shows that the optimum parameters are: 70 eV with 1.5 ml/min methane gas. According to Thermo technical 
+
+```{r, echo=FALSE}
+
+gasvsev <- read_xlsx("D:/Projects/Formas_CPs_indoor/Experimental/2021/20210802_ECNI_optimization_params.xlsx", 
+                     sheet = "CIgas_vs_Area") %>%
+        mutate(Cigas = as.factor(Cigas), eV = as.factor(eV)) %>%
+        pivot_longer(cols = where(is.numeric), names_to = "Congener_group", values_to = "Area")
+
+gasvsev %>%
+        ggplot(aes(x = Congener_group, y = Area)) +
+        geom_bar(aes(fill = eV), stat = "identity", position=position_dodge()) +
+        facet_grid(~Cigas, labeller = label_both) +
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 90))
+        
+
+
+```
+
+
+Calibration of 5 ppm SCCPs
+
+```{r, echo=FALSE}
+
+sccp <- read_xlsx("D:/Projects/Formas_CPs_indoor/Experimental/2021/20210802_ECNI_optimization_params.xlsx", 
+                     sheet = "20210803_cal5ppm") %>%
+        mutate(perc_Cl = as.factor(perc_Cl)) %>%
+        pivot_longer(cols = C10Cl5:C13Cl9, names_to = "Congener_group", values_to = "Area")
+
+sccp %>%
+        ggplot(aes(x = Congener_group, y = Area)) +
+        geom_bar(aes(fill = Congener_group), stat = "identity", position=position_dodge()) +
+        facet_grid(~perc_Cl, labeller = label_both) +
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 90))
+        
+
+
+```
+
+
+
+
+
+
