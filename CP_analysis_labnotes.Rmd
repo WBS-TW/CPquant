@@ -15,31 +15,170 @@ library(tidyverse)
 library(readxl)
 library(rcdk)
 library(enviPat)
+
 data("isotopes")
+data("adducts")
+
+Cl_adducts <- readxl::read_xlsx("./data/CP_adducts.xlsx") %>%
+        mutate(Formula_add = as.character(Formula_add))
+
+adducts <- adducts %>% bind_rows(Cl_adducts)
+
+#library(iterpc)
 #library(IsoSpecR)
 
 ```
 
 
-```{r, echo=FALSE,eval=FALSE}
 
-# CnH(2n+2-x)Clx
+Generate theoretical CP homologs
+```{r}
+
+# Initiate boundaries for carbon and chlorine atoms
+C <- as.integer(9:30)
+Cl <- as.integer(3:30)
 
 
+CP <- crossing(C, Cl) %>% #set combinations of C and Cl
+        filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
+        filter(Cl < 15) %>% # limit chlorination level CHECK WITH LCCPs!!
+        mutate(H = 2*C+2-Cl) %>% # add H atoms
+        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
+        select(Formula, C, H, Cl) # move Formula to first column
 
-C <- 13
-Cl <- 10
-H <- 2*C+2-Cl
+# check chem_forms
+ if (any(check_chemform(isotopes = isotopes, chemforms = CP$Formula)$warning == TRUE)) {print("Warning: incorrect formula")} else {"All correct"}
 
-CP_formula <- paste0("C", C, "H", H, "Cl", Cl)
-CP_formula
 
-CP_isotopes <- isopattern(isotopes, CP_formula, threshold = 0.01, plotit = FALSE, charge = -1) %>% as.data.frame()
+# Generate fragments M-Cl and M-HCl for each homolog formula
 
-CP_isotopes[1] <- CP_isotopes[1] - 1.007825
+CP_lossCl <- CP %>%
+        mutate(Parent = Formula) %>%
+        mutate(Fragment = "M-Cl") %>%
+        mutate(Cl = Cl-1) %>%
+        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+        select(Parent, Fragment, Formula, C, H, Cl)
+
+
+CP_lossHCl <- CP %>%
+        mutate(Parent = Formula) %>%
+        mutate(Fragment = "M-HCl") %>%
+        mutate(Cl = Cl-1) %>%
+        mutate(H = H-1) %>%
+        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+        select(Parent, Fragment, Formula, C, H, Cl)
+
+
+# function to get isotopic patterns for all CPs. Limit the threshold to 1%, neutral form. data("isotopes") needs to be loaded first
+getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, chemforms = x, threshold = 1, plotit = FALSE, charge = -1)}
+
+# get formula names. NOT USED
+formula_names <- function(data, C12, C13, H1, H2, Cl35, Cl37) {
+        data %>%
+                mutate(isotope = paste0("[12C]", {{C12}}, "[13C]", {{C13}}, "[1H]", {{H1}}, "[2H]", {{H2}}, "[35Cl]", {{Cl35}}, "[37Cl]", {{Cl37}}))
+}
+
+# All formula for M-Cl
+CP_lossCl_ls <- list()
+for (i in seq_along(CP_lossCl$Formula)) {
+        Formula <- CP_lossCl$Formula[i]
+        Parent <- CP_lossCl$Parent[i]
+        dat <- getisotopes(CP_lossCl$Formula[i])
+        dat <- as.data.frame(dat[[1]])
+        dat <- dat %>% 
+                mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`)) %>%
+                mutate(Parent_Formula = Parent) %>%
+                mutate(Frag_Formula =  Formula) %>%
+                mutate(Isotope = case_when(
+                        `13C` == 0 & `37Cl` == 0 ~ "",
+                        `13C` == 0 & `37Cl` == 1 ~ "+2",
+                        `13C` == 0 & `37Cl` == 2 ~ "+4",
+                        `13C` == 0 & `37Cl` == 3 ~ "+6",
+                        `13C` == 0 & `37Cl` == 4 ~ "+8",
+                        `13C` == 0 & `37Cl` == 5 ~ "+10",
+                        `13C` == 0 & `37Cl` == 6 ~ "+12",
+                        `13C` == 0 & `37Cl` == 7 ~ "+14",
+                        `13C` == 0 & `37Cl` == 8 ~ "+16",
+                        `13C` == 0 & `37Cl` == 9 ~ "+18",
+                        `13C` == 1 & `37Cl` == 0 ~ "+1",
+                        `13C` == 1 & `37Cl` == 1 ~ "+3",
+                        `13C` == 1 & `37Cl` == 2 ~ "+5",
+                        `13C` == 1 & `37Cl` == 3 ~ "+7",
+                        `13C` == 1 & `37Cl` == 4 ~ "+9",
+                        `13C` == 1 & `37Cl` == 5 ~ "+11",
+                        `13C` == 1 & `37Cl` == 6 ~ "+13",
+                        `13C` == 1 & `37Cl` == 7 ~ "+15",
+                        `13C` == 1 & `37Cl` == 8 ~ "+17",
+                        `13C` == 1 & `37Cl` == 9 ~ "+19",
+                        `13C` == 2 & `37Cl` == 0 ~ "+2",
+                        `13C` == 2 & `37Cl` == 1 ~ "+4",
+                        `13C` == 2 & `37Cl` == 2 ~ "+6",
+                        `13C` == 2 & `37Cl` == 3 ~ "+8",
+                        `13C` == 2 & `37Cl` == 4 ~ "+10",
+                        `13C` == 2 & `37Cl` == 5 ~ "+12",
+                        `13C` == 2 & `37Cl` == 6 ~ "+14",
+                        `13C` == 2 & `37Cl` == 7 ~ "+16")) %>%
+                mutate(Fragment = paste0("M-Cl", Isotope)) %>%
+                select(Parent_Formula, Fragment, Frag_Formula, Isotope, Isotope_Formula, `m/z`, abundance, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+        CP_lossCl_ls[[i]] <- dat
+}
+
+CP_lossCl_ls <- do.call(rbind, CP_lossCl_ls)
+
+# All formula for M-HCl
+CP_lossHCl_ls <- list()
+for (i in seq_along(CP_lossHCl$Formula)) {
+        Formula <- CP_lossHCl$Formula[i]
+        Parent <- CP_lossHCl$Parent[i]
+        dat <- getisotopes(CP_lossHCl$Formula[i])
+        dat <- as.data.frame(dat[[1]])
+        dat <- dat %>% 
+                mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`)) %>%
+                mutate(Parent_Formula = Parent) %>%
+                mutate(Frag_Formula =  Formula) %>%
+                mutate(Isotope = case_when(
+                        `13C` == 0 & `37Cl` == 0 ~ "",
+                        `13C` == 0 & `37Cl` == 1 ~ "+2",
+                        `13C` == 0 & `37Cl` == 2 ~ "+4",
+                        `13C` == 0 & `37Cl` == 3 ~ "+6",
+                        `13C` == 0 & `37Cl` == 4 ~ "+8",
+                        `13C` == 0 & `37Cl` == 5 ~ "+10",
+                        `13C` == 0 & `37Cl` == 6 ~ "+12",
+                        `13C` == 0 & `37Cl` == 7 ~ "+14",
+                        `13C` == 0 & `37Cl` == 8 ~ "+16",
+                        `13C` == 0 & `37Cl` == 9 ~ "+18",
+                        `13C` == 1 & `37Cl` == 0 ~ "+1",
+                        `13C` == 1 & `37Cl` == 1 ~ "+3",
+                        `13C` == 1 & `37Cl` == 2 ~ "+5",
+                        `13C` == 1 & `37Cl` == 3 ~ "+7",
+                        `13C` == 1 & `37Cl` == 4 ~ "+9",
+                        `13C` == 1 & `37Cl` == 5 ~ "+11",
+                        `13C` == 1 & `37Cl` == 6 ~ "+13",
+                        `13C` == 1 & `37Cl` == 7 ~ "+15",
+                        `13C` == 1 & `37Cl` == 8 ~ "+17",
+                        `13C` == 1 & `37Cl` == 9 ~ "+19",
+                        `13C` == 2 & `37Cl` == 0 ~ "+2",
+                        `13C` == 2 & `37Cl` == 1 ~ "+4",
+                        `13C` == 2 & `37Cl` == 2 ~ "+6",
+                        `13C` == 2 & `37Cl` == 3 ~ "+8",
+                        `13C` == 2 & `37Cl` == 4 ~ "+10",
+                        `13C` == 2 & `37Cl` == 5 ~ "+12",
+                        `13C` == 2 & `37Cl` == 6 ~ "+14",
+                        `13C` == 2 & `37Cl` == 7 ~ "+16")) %>%
+                mutate(Fragment = paste0("M-HCl", Isotope)) %>%
+                select(Parent_Formula, Fragment, Frag_Formula, Isotope, Isotope_Formula, `m/z`, abundance, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+        CP_lossHCl_ls[[i]] <- dat
+}
+CP_lossHCl_ls <- do.call(rbind, CP_lossHCl_ls)
+
+# combine both M-Cl and M-HCl
+CP_allions <- rbind(CP_lossCl_ls, CP_lossHCl_ls)
+
+
 
 
 ```
+
 
 
 # Optimization of GC-ECNI-orbitrap-HRAMS for CPs
