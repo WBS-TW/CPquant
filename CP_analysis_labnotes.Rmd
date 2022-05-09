@@ -194,7 +194,7 @@ adduct_ions <- c("[CP-HCl]-", "[CO-Cl]-")
 # use getAdduct to list all ions
 CP_allions_compl <- list()
 for (i in seq_along(adduct_ions)) {
-        input <- getAdduct(adduct_ions = adduct_ions[i], C = C, Cl = Cl)
+        input <- getAdduct(adduct_ions = adduct_ions[i], C = C, Cl = Cl, threshold = threshold)
         CP_allions_compl <- rbind(CP_allions_compl, input)
         
 }

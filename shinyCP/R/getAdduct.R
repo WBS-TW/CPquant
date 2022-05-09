@@ -9,7 +9,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         if (group == "CP") {
                 data <- crossing(C, Cl) %>% #set combinations of C and Cl
                         filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
-                        filter(Cl < 15) %>% # limit chlorination level CHECK WITH LCCPs!!
+                        filter(Cl < 15) %>% # limit chlorination level. CHECK WITH LCCPs!!
                         mutate(H = 2*C+2-Cl) %>% # add H atoms
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
                         select(Formula, C, H, Cl) # move Formula to first column
@@ -87,7 +87,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Parent_Formula = Parent) %>%
                         mutate(Frag_MonoIso_Formula =  Formula) %>%
                         mutate(Charge = Charge) %>%
-                        mutate(Isotope = case_when(
+                        mutate(Isotopologue = case_when(
                                 `13C` + `37Cl`*2 == 0 ~ "",
                                 `13C` + `37Cl`*2 == 1 ~ "+1",
                                 `13C` + `37Cl`*2 == 2 ~ "+2",
@@ -109,8 +109,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                 `13C` + `37Cl`*2 == 18 ~ "+18",
                                 `13C` + `37Cl`*2 == 19 ~ "+19",
                                 `13C` + `37Cl`*2 == 20 ~ "+20")) %>%
-                        mutate(Fragment = paste0(adduct_ions, " ", Isotope)) %>%
-                        select(Parent_Formula, Charge, Fragment, Frag_MonoIso_Formula, Isotope, Isotope_Formula, `m/z`, abundance, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+                        mutate(Fragment = paste0(adduct_ions, " ", Isotopologue)) %>%
+                        select(Parent_Formula, Charge, Fragment, Frag_MonoIso_Formula, Isotopologue, Isotope_Formula, `m/z`, abundance, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
                 data_ls[[j]] <- dat
         }
         

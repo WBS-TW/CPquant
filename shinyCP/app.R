@@ -1,11 +1,9 @@
 # TODO
-# Add textbox to input all adducts and iteratively calculate these
-        # (maybe "CP-Cl" to indicate chlorinated paraffins CPs, "CO-Cl" to indicate chlorinated olefins)
-# Add also calculations for chlorinated olefins: https://pubs.acs.org/doi/10.1021/acs.analchem.7b00331; https://www.sciencedirect.com/science/article/pii/S002196732030114X?via%3Dihub
-# Add filter on C and Cl
+
 
 # Instructions:
 # Add that [M+Cl-HCl]- can be written as [M-H]-
+# Chlorinated paraffins are written as [CP] and chlorinated olefins as [CO]
 
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
 
@@ -14,20 +12,12 @@ library(shinythemes)
 library(DT)
 library(tidyverse)
 library(readxl)
-#library(rcdk)
+library(plotly)
 library(enviPat)
 
 data("isotopes")
 source("./R/getAdduct.R")
 
-#-------Functions-------#
-
-
-# Additional data on adducts, but not needed yet
-# data("adducts")
-# Cl_adducts <- readxl::read_xlsx("./data/CP_adducts.xlsx") %>%
-#         mutate(Formula_add = as.character(Formula_add))
-# adducts <- adducts %>% bind_rows(Cl_adducts)
 
 
 #--------------------------------UI function----------------------------------#
@@ -38,8 +28,8 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("Cmin", "C atoms min", value = 9, min = 1, max = 30),
-                                        shiny::numericInput("Cmax", "C atoms max", value = 30, min = 1, max = 30),
+                                        shiny::numericInput("Cmin", "C atoms min (3-30)", value = 9, min = 3, max = 30),
+                                        shiny::numericInput("Cmax", "C atoms max", value = 30, min = 4, max = 30),
                                         shiny::numericInput("Clmin", "Cl atoms min", value = 3, min = 1, max = 30),
                                         shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 30),
                                         shiny::br(),
@@ -54,11 +44,21 @@ ui <- shiny::navbarPage(
                                         shiny::actionButton("go", "Submit", width = "100%")
                                         ),
                                 shiny::mainPanel(
-                                        DT::dataTableOutput("Table")
+                                        DT::dataTableOutput("Table", width = "100%")
+                                        )
+                                )
+                        )),
+        shiny::tabPanel("Interfering ions",
+                        shiny::fluidPage(shiny::sidebarLayout(
+                                shiny::sidebarPanel(
+                                        shiny::h3("Table of content")
+                                        ),
+                                shiny::mainPanel(
+                                        plotly::plotlyOutput("Plotly")
                                         
                                 )
-                        )
-                        )),
+                                )
+                                )),
         shiny::tabPanel(
                 "Instructions",
                 shiny::sidebarLayout(
@@ -81,7 +81,7 @@ ui <- shiny::navbarPage(
 server = function(input, output, session) {
         
         # function to get isotopic patterns for all CPs. Limit the threshold to 10%, -1 charge. data("isotopes") needs to be loaded first
-        getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, chemforms = x, threshold = 10, plotit = FALSE, charge = -1)}
+        #getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, chemforms = x, threshold = 10, plotit = FALSE, charge = -1)}
         
         # Set values from user input
         C <- eventReactive(input$go, {as.integer(input$Cmin:input$Cmax)})
@@ -111,19 +111,36 @@ server = function(input, output, session) {
               
                 #output$Table <- DT::renderDataTable(CP_allions_compl)
                 
-                output$Table <- DT::renderDT(server=FALSE,{
+                output$Table <- DT::renderDT(server=TRUE,{
                         # Show data
                         datatable(CP_allions_compl, 
-                                  rownames = FALSE,
-                                  extensions = 'Buttons', 
-                                  options = list(
-                                          paging = FALSE,
-                                          dom = 'Bfrtip',
-                                          buttons = list(list(extend = "excel", title = NULL),
-                                                         list(extend = "csv", title = NULL))
-                                          )
-                                  )
+                                  filter = "top", extensions = c("Buttons", "Scroller"),
+                                  options = list(scrollY = 650,
+                                                 scrollX = 500,
+                                                 deferRender = TRUE,
+                                                 scroller = TRUE,
+                                                 # paging = TRUE,
+                                                 # pageLength = 25,
+                                                 buttons = list(list(extend = "excel", title = NULL),
+                                                                list(extend = "colvis", targets = 0, visible = FALSE)),
+                                                 dom = "lBfrtip",
+                                                 fixedColumns = TRUE), 
+                                  rownames = FALSE)
                         })
+                
+                output$Plotly <- plotly::renderPlotly(
+                        plot_ly(CP_allions_compl,
+                                x = ~Parent_Formula, 
+                                y = ~`m/z`,
+                                #size = ~abundance,
+                                type = "scatter",
+                                mode = "markers",
+                                marker = list(
+                                        color = ~`35Cl`,
+                                        colorscale = "Hot"
+                                        )
+                                )
+                        )
                
                 })
         
