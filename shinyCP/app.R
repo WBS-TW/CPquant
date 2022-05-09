@@ -40,8 +40,8 @@ ui <- shiny::navbarPage(
                                                 selectize = TRUE,
                                                 width = NULL,
                                                 size = NULL),
-                                        shiny::numericInput("threshold", "Threshold for isotopic calculations", value = 10, min = 1, max = 95),
-                                        shiny::actionButton("go", "Submit", width = "100%")
+                                        shiny::numericInput("threshold", "Isotope rel ab threshold (in %)", value = 10, min = 1, max = 95),
+                                        shiny::actionButton("go1", "Submit", width = "100%")
                                         ),
                                 shiny::mainPanel(
                                         DT::dataTableOutput("Table", width = "100%")
@@ -51,10 +51,12 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Interfering ions",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::h3("Table of content")
+                                        shiny::numericInput("MSresolution", "MS Resolution", value = 60000, min = 1000, max = 3000000),
+                                        shiny::actionButton("go2", "Calculate interfering ions", width = "100%")
                                         ),
                                 shiny::mainPanel(
-                                        plotly::plotlyOutput("Plotly")
+                                        plotly::plotlyOutput("Plotly"),
+                                        DT::dataTableOutput("Table2", width = "100%")
                                         
                                 )
                                 )
@@ -80,18 +82,17 @@ ui <- shiny::navbarPage(
 
 server = function(input, output, session) {
         
-        # function to get isotopic patterns for all CPs. Limit the threshold to 10%, -1 charge. data("isotopes") needs to be loaded first
-        #getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, chemforms = x, threshold = 10, plotit = FALSE, charge = -1)}
-        
         # Set values from user input
-        C <- eventReactive(input$go, {as.integer(input$Cmin:input$Cmax)})
-        Cl <- eventReactive(input$go, {as.integer(input$Clmin:input$Clmax)})
-        threshold <- eventReactive(input$go, {as.integer(input$threshold)})
-        selectedAdducts <- eventReactive(input$go, {as.character(input$Adducts)})
+        C <- eventReactive(input$go1, {as.integer(input$Cmin:input$Cmax)})
+        Cl <- eventReactive(input$go1, {as.integer(input$Clmin:input$Clmax)})
+        threshold <- eventReactive(input$go1, {as.integer(input$threshold)})
+        selectedAdducts <- eventReactive(input$go1, {as.character(input$Adducts)})
+        MSresolution <- eventReactive(input$go2, {as.integer(input$MSresolution)})
         
-        # Outputs
+
+#----Outputs_Start
   
-        shiny::observeEvent(input$go, {
+        shiny::observeEvent(input$go1, {
                 
                 # Create a Progress object
                 progress <- shiny::Progress$new()
@@ -109,11 +110,11 @@ server = function(input, output, session) {
                         CP_allions_compl <- rbind(CP_allions_compl, input)
                         }
               
-                #output$Table <- DT::renderDataTable(CP_allions_compl)
+               
                 
                 output$Table <- DT::renderDT(server=TRUE,{
                         # Show data
-                        datatable(CP_allions_compl, 
+                        DT::datatable(CP_allions_compl, 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
                                   options = list(scrollY = 650,
                                                  scrollX = 500,
@@ -127,7 +128,6 @@ server = function(input, output, session) {
                                                  fixedColumns = TRUE), 
                                   rownames = FALSE)
                         })
-                
                 output$Plotly <- plotly::renderPlotly(
                         plot_ly(CP_allions_compl,
                                 x = ~Parent_Formula, 
@@ -137,14 +137,42 @@ server = function(input, output, session) {
                                 mode = "markers",
                                 marker = list(
                                         color = ~`35Cl`,
-                                        colorscale = "Hot"
-                                        )
+                                        colorscale = "Hot")
                                 )
                         )
-               
+                
+                
+                })
+        shiny::observeEvent(input$go2, {
+
+                CP_allions_compl2 <- CP_allions_compl %>%
+                        arrange(`m/z`) %>%
+                        mutate(diff = `m/z` - lag(`m/z`, default = first(`m/z`))) %>%
+                        mutate(resolution = round(`m/z`/diff, 0)) %>%
+                        mutate(interference = case_when(
+                                resolution >= as.integer(MSresolution()) ~ TRUE,
+                                resolution < as.integer(MSresolution()) ~ FALSE)
+                               )
+                
+                output$Table2 <- DT::renderDT(server=TRUE,{
+                        # Show data
+                        DT::datatable(CP_allions_compl2, 
+                                  filter = "top", extensions = c("Buttons", "Scroller"),
+                                  options = list(scrollY = 650,
+                                                 scrollX = 500,
+                                                 deferRender = TRUE,
+                                                 scroller = TRUE,
+                                                 # paging = TRUE,
+                                                 # pageLength = 25,
+                                                 buttons = list(list(extend = "excel", title = NULL),
+                                                                list(extend = "colvis", targets = 0, visible = FALSE)),
+                                                 dom = "lBfrtip",
+                                                 fixedColumns = TRUE), 
+                                  rownames = FALSE)
+                })
                 })
         
-
+#----Outputs_End
 
         
         
