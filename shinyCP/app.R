@@ -43,7 +43,6 @@ ui <- shiny::navbarPage(
                                         shiny::numericInput("Clmin", "Cl atoms min", value = 3, min = 1, max = 30),
                                         shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 30),
                                         shiny::br(),
-                                        #shiny::textInput("Adducts", "Add adducts/fragments", value = "[CP-Cl]-"),
                                         selectInput("Adducts", "Add adducts/fragments",
                                                 choices = c("[CP-Cl]-", "[CP-HCl]-", "[CO-Cl]-", "[CO-HCl]-"),
                                                 selected = "[CP-Cl]-",
@@ -52,11 +51,9 @@ ui <- shiny::navbarPage(
                                                 width = NULL,
                                                 size = NULL),
                                         shiny::numericInput("threshold", "Threshold for isotopic calculations", value = 10, min = 1, max = 95),
-                                        shiny::actionButton('go', 'Submit', width = "100%")
-                                ),
+                                        shiny::actionButton("go", "Submit", width = "100%")
+                                        ),
                                 shiny::mainPanel(
-                                        shiny::textOutput("viewAdducts"),
-                                        shiny::br(),
                                         DT::dataTableOutput("Table")
                                         
                                 )
@@ -94,23 +91,44 @@ server = function(input, output, session) {
         
         # Outputs
   
-        #output$viewAdducts <- renderText({paste0("You selected: ", selectedAdducts())})
-        
-
         shiny::observeEvent(input$go, {
+                
+                # Create a Progress object
+                progress <- shiny::Progress$new()
+                # Make sure it closes when we exit this reactive, even if there's an error
+                on.exit(progress$close())
+                progress$set(message = "Calculating", value = 0)
                 
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get adducts or fragments
                 CP_allions_compl <- list()
                 for (i in seq_along(Adducts)) {
+                        progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
                         CP_allions_compl <- rbind(CP_allions_compl, input)
                         }
               
-                output$Table <- DT::renderDataTable(CP_allions_compl)
+                #output$Table <- DT::renderDataTable(CP_allions_compl)
+                
+                output$Table <- DT::renderDT(server=FALSE,{
+                        # Show data
+                        datatable(CP_allions_compl, 
+                                  rownames = FALSE,
+                                  extensions = 'Buttons', 
+                                  options = list(
+                                          paging = FALSE,
+                                          dom = 'Bfrtip',
+                                          buttons = list(list(extend = "excel", title = NULL),
+                                                         list(extend = "csv", title = NULL))
+                                          )
+                                  )
+                        })
                
                 })
+        
+
+
         
         
         
