@@ -128,18 +128,18 @@ server = function(input, output, session) {
                                                  fixedColumns = TRUE), 
                                   rownames = FALSE)
                         })
-                output$Plotly <- plotly::renderPlotly(
-                        plot_ly(CP_allions_compl,
-                                x = ~Parent_Formula, 
-                                y = ~`m/z`,
-                                #size = ~abundance,
-                                type = "scatter",
-                                mode = "markers",
-                                marker = list(
-                                        color = ~`35Cl`,
-                                        colorscale = "Hot")
-                                )
-                        )
+                # output$Plotly <- plotly::renderPlotly(
+                #         plot_ly(CP_allions_compl,
+                #                 x = ~Parent_Formula, 
+                #                 y = ~`m/z`,
+                #                 #size = ~abundance,
+                #                 type = "scatter",
+                #                 mode = "markers",
+                #                 marker = list(
+                #                         color = ~`35Cl`,
+                #                         colorscale = "Hot")
+                #                 )
+                #         )
                 
                 
                 })
@@ -147,12 +147,29 @@ server = function(input, output, session) {
 
                 CP_allions_compl2 <- CP_allions_compl %>%
                         arrange(`m/z`) %>%
-                        mutate(diff = `m/z` - lag(`m/z`, default = first(`m/z`))) %>%
-                        mutate(resolution = round(`m/z`/diff, 0)) %>%
+                        mutate(difflag = round(abs(`m/z` - lag(`m/z`, default = first(`m/z`))),6)) %>%
+                        mutate(difflead = round(abs(`m/z` - lead(`m/z`, default = last(`m/z`))), 6)) %>%
+                        mutate(reslag = round(`m/z`/difflag, 0)) %>%
+                        mutate(reslead = round(`m/z`/difflead, 0)) %>%
                         mutate(interference = case_when(
-                                resolution >= as.integer(MSresolution()) ~ TRUE,
-                                resolution < as.integer(MSresolution()) ~ FALSE)
+                                difflag == 0 | difflead == 0 ~ FALSE,
+                                reslag >= as.integer(MSresolution()) | reslead >= as.integer(MSresolution()) ~ TRUE,
+                                reslag < as.integer(MSresolution()) & reslead < as.integer(MSresolution()) ~ FALSE
+                                )
                                )
+
+                
+                output$Plotly <- plotly::renderPlotly(
+                        p <- CP_allions_compl2 %>% plot_ly(
+                                x = ~Parent_Formula, 
+                                y = ~`m/z`,
+                                #size = ~abundance,
+                                type = "scatter",
+                                mode = "markers",
+                                color = ~interference)
+                        %>% 
+                        plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
+                )
                 
                 output$Table2 <- DT::renderDT(server=TRUE,{
                         # Show data
