@@ -1,9 +1,6 @@
 # TODO
-# Add positive and negative ions for LCHRMS:
-# Add EI pos: [M−Cl−2HCl]+
-# https://www.sciencedirect.com/science/article/pii/S0045653519327717?via%3Dihub
-# NOT WORKING YET: cannot select multiple adduct/fragments
-
+# New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
+# ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
 
