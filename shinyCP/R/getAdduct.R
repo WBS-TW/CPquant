@@ -60,6 +60,30 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Cl = Cl+1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
                         select(Parent, Charge, Fragment, Formula, C, H, Cl)
+        } else if (fragment_ions == "-Cl-HCl") { # Generate fragments M-Cl-HCl for each homolog formula
+                data <- data %>%
+                        mutate(Parent = Formula) %>% 
+                        mutate(Fragment = adduct_ions) %>%
+                        mutate(Cl = Cl-2) %>%
+                        mutate(H = H-1) %>%
+                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+                        select(Parent, Charge, Fragment, Formula, C, H, Cl)
+        } else if (fragment_ions == "-Cl-2HCl") { # Generate fragments M-Cl2HCl for each homolog formula
+                data <- data %>%
+                        mutate(Parent = Formula) %>% 
+                        mutate(Fragment = adduct_ions) %>%
+                        mutate(Cl = Cl-3) %>%
+                        mutate(H = H-2) %>%
+                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+                        select(Parent, Charge, Fragment, Formula, C, H, Cl)
+        } else if (fragment_ions == "-Cl-3HCl") { # Generate fragments M-Cl-HCl for each homolog formula
+                data <- data %>%
+                        mutate(Parent = Formula) %>% 
+                        mutate(Fragment = adduct_ions) %>%
+                        mutate(Cl = Cl-4) %>%
+                        mutate(H = H-3) %>%
+                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+                        select(Parent, Charge, Fragment, Formula, C, H, Cl)
         }
         
         # Remove formula without Cl after adduct formations

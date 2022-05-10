@@ -182,7 +182,7 @@ threshold <- 10
 # First test single adduct
 #adduct_ions <- c("[CP-Cl]-")
 #adduct_ions <- c("[CO-HCl]-")
-adduct_ions <- c("[CP-Cl-2HCl]")
+adduct_ions <- c("[CP-Cl-2HCl]+")
 
 # test to convert string to vector
 #adduct_ions <- "[CP-HCl]-,[CO-Cl]-"
