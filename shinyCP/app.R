@@ -38,14 +38,14 @@ ui <- shiny::navbarPage(
                                         shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 30),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
-                                                choices = c("[CP-Cl]-", "[CP-HCl]-", "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+", 
-                                                            "[CO-Cl]-", "[CO-HCl]-"),
+                                                choices = c("[CP-Cl]-", "[CP-HCl]-", "[CO-Cl]-", "[CO-HCl]-",
+                                                "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+"),
                                                 selected = "[CP-Cl]-",
                                                 multiple = TRUE,
                                                 selectize = TRUE,
                                                 width = NULL,
                                                 size = NULL),
-                                        shiny::numericInput("threshold", "Isotope rel ab threshold (in %)", value = 10, min = 1, max = 95),
+                                        shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 10, min = 1, max = 99),
                                         shiny::actionButton("go1", "Submit", width = "100%")
                                         ),
                                 shiny::mainPanel(
@@ -61,6 +61,7 @@ ui <- shiny::navbarPage(
                                         ),
                                 shiny::mainPanel(
                                         plotly::plotlyOutput("Plotly"),
+                                        plotly::plotlyOutput("Plotly2"),
                                         DT::dataTableOutput("Table2", width = "100%")
                                         
                                 )
@@ -160,12 +161,21 @@ server = function(input, output, session) {
                         p <- CP_allions_compl2 %>% plot_ly(
                                 x = ~Parent_Formula, 
                                 y = ~`m/z`,
-                                #size = ~abundance,
                                 type = "scatter",
                                 mode = "markers",
                                 color = ~interference)
                         %>% 
                         plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
+                )
+                
+                output$Plotly2 <- plotly::renderPlotly(
+                        p <- CP_allions_compl2 %>% plot_ly(
+                                x = ~`m/z`, 
+                                y = ~Rel_ab,
+                                type = "bar",
+                                color = ~interference)
+                        %>% 
+                                plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
                 
                 output$Table2 <- DT::renderDT(server=TRUE,{

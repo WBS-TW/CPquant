@@ -134,7 +134,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                 `13C` + `37Cl`*2 == 19 ~ "+19",
                                 `13C` + `37Cl`*2 == 20 ~ "+20")) %>%
                         mutate(Fragment = paste0(adduct_ions, " ", Isotopologue)) %>%
-                        select(Parent_Formula, Charge, Fragment, Frag_MonoIso_Formula, Isotopologue, Isotope_Formula, `m/z`, abundance, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+                        rename(Rel_ab = abundance) %>%
+                        select(Parent_Formula, Charge, Fragment, Frag_MonoIso_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
                 data_ls[[j]] <- dat
         }
         
