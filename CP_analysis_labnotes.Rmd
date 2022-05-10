@@ -174,7 +174,7 @@ Test to shinyapp
 source("./shinyCP/R/getAdduct.R")
 # Initiate boundaries for carbon and chlorine atoms
 C <- as.integer(9:30)
-Cl <- as.integer(1:30)
+Cl <- as.integer(2:30)
 
 # params for isopattern
 threshold <- 10
@@ -182,7 +182,7 @@ threshold <- 10
 # First test single adduct
 #adduct_ions <- c("[CP-Cl]-")
 #adduct_ions <- c("[CO-HCl]-")
-adduct_ions <- c("[CP-HCl]-", "[CO-Cl]-")
+adduct_ions <- c("[CP-Cl-2HCl]")
 
 # test to convert string to vector
 #adduct_ions <- "[CP-HCl]-,[CO-Cl]-"

@@ -1,4 +1,8 @@
 # TODO
+# Add positive and negative ions for LCHRMS:
+# Add EI pos: [M−Cl−2HCl]+
+# https://www.sciencedirect.com/science/article/pii/S0045653519327717?via%3Dihub
+
 
 
 # Instructions:
@@ -92,7 +96,7 @@ server = function(input, output, session) {
 
 #----Outputs_Start
 
-        CP_allions_compl_glob <- eventReactive(input$go1, {
+        CP_allions_glob <- eventReactive(input$go1, {
                 
                 # Create a Progress object
                 progress <- shiny::Progress$new()
@@ -103,12 +107,12 @@ server = function(input, output, session) {
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get adducts or fragments
-                CP_allions_compl <- list()
+                CP_allions <- list()
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
-                        CP_allions_compl <- rbind(CP_allions_compl, input)
-                        return(CP_allions_compl)
+                        CP_allions <- rbind(CP_allions, input)
+                        return(CP_allions)
                 }
         })
               
@@ -116,7 +120,7 @@ server = function(input, output, session) {
                 shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=TRUE,{
                         # Show data
-                        DT::datatable(CP_allions_compl_glob(), 
+                        DT::datatable(CP_allions_glob(), 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
                                   options = list(scrollY = 650,
                                                  scrollX = 500,
@@ -137,9 +141,7 @@ server = function(input, output, session) {
         
         shiny::observeEvent(input$go2, {
                 
-                #CP_allions_compl2 <- as.data.frame(CP_allions_compl_glob())
-
-                CP_allions_compl2 <- CP_allions_compl_glob() %>%
+                CP_allions_compl2 <- CP_allions_glob() %>%
                         arrange(`m/z`) %>%
                         mutate(difflag = round(abs(`m/z` - lag(`m/z`, default = first(`m/z`))),6)) %>%
                         mutate(difflead = round(abs(`m/z` - lead(`m/z`, default = last(`m/z`))), 6)) %>%
