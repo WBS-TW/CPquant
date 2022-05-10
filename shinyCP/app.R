@@ -180,7 +180,13 @@ server = function(input, output, session) {
                                 hoverinfo = "text",
                                 hovertext = paste("Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
                                                   '<br>',
-                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment)
+                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment,
+                                                  '<br>',
+                                                  "m/z:", CP_allions_compl2$`m/z`,
+                                                  '<br>',
+                                                  "m/z diff (prev and next):", CP_allions_compl2$difflag, "&", CP_allions_compl2$difflead,
+                                                  '<br>',
+                                                  "Resolution needed (prev and next):", CP_allions_compl2$reslag, "&", CP_allions_compl2$reslead)
                                 )
                         %>% 
                                 plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
