@@ -5,10 +5,6 @@
 
 
 
-# Instructions:
-# Add that [M+Cl-HCl]- can be written as [M-H]-
-# Chlorinated paraffins are written as [CP] and chlorinated olefins as [CO]
-
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
 
 library(shiny)
@@ -27,14 +23,14 @@ source("./R/getAdduct.R")
 #--------------------------------UI function----------------------------------#
 
 ui <- shiny::navbarPage(
-        "Chlorinated Paraffins interference generator",
+        "Chlorinated paraffin ions generator",
         theme = shinythemes::shinytheme('spacelab'),
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("Cmin", "C atoms min (3-30)", value = 9, min = 3, max = 30),
+                                        shiny::numericInput("Cmin", "C atoms min", value = 9, min = 3, max = 30),
                                         shiny::numericInput("Cmax", "C atoms max", value = 30, min = 4, max = 30),
-                                        shiny::numericInput("Clmin", "Cl atoms min", value = 3, min = 1, max = 30),
+                                        shiny::numericInput("Clmin", "Cl atoms min)", value = 3, min = 1, max = 30),
                                         shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 30),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
@@ -56,7 +52,7 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Interfering ions",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("MSresolution", "MS Resolution", value = 60000, min = 1000, max = 3000000),
+                                        shiny::numericInput("MSresolution", "MS Resolution", value = 60000, min = 100, max = 3000000),
                                         shiny::actionButton("go2", "Calculate interfering ions", width = "100%")
                                         ),
                                 shiny::mainPanel(
@@ -70,11 +66,10 @@ ui <- shiny::navbarPage(
         shiny::tabPanel(
                 "Instructions",
                 shiny::sidebarLayout(
-                        shiny::sidebarPanel(shiny::h3("Table of content"),
-                                            shiny::h4("File input"),
-                                            shiny::h4("Equation"),
+                        shiny::sidebarPanel(shiny::h3("Instructions"),
                                             width = 3),
-                        shiny::mainPanel(shiny::h3("Add instructions here!")
+                        shiny::mainPanel(
+                                shiny::withMathJax(shiny::includeMarkdown("instructions.md"))
                                                 )
                 )
         )
