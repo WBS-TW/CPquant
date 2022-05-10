@@ -43,8 +43,8 @@ ui <- shiny::navbarPage(
                                                 width = NULL,
                                                 size = NULL),
                                         shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 5, min = 1, max = 99),
-                                        shiny::actionButton("go1", "Submit", width = "100%")
-                                        ),
+                                        shiny::actionButton("go1", "Submit", width = "100%"),
+                                        width = 3),
                                 shiny::mainPanel(
                                         DT::dataTableOutput("Table", width = "100%")
                                         )
@@ -54,7 +54,8 @@ ui <- shiny::navbarPage(
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
                                         shiny::numericInput("MSresolution", "MS Resolution", value = 60000, min = 100, max = 3000000),
-                                        shiny::actionButton("go2", "Calculate interfering ions", width = "100%")
+                                        shiny::actionButton("go2", "Calculate", width = "100%"),
+                                        width = 2
                                         ),
                                 shiny::mainPanel(
                                         plotly::plotlyOutput("Plotly"),

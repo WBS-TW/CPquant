@@ -22,7 +22,7 @@ _[xx-yy]_ or _[xx-yy-zz]_: where _-yy_ or _-yy-zz refers to the adduct/fragment 
   
 _[xx]-_ and _[xx]+_ refers to the charge of the ion (limited to single charged species, +1 or -1).  
   
-[M+Cl-HCl]- can be written as [M-H]-  
+[M+Cl-HCl]- can also be written as [M-H]-  
   
 _Isotope rel ab threshold (%)_: is the threshold for relative abundance for isotopologues for each chemical formula of the adduct/fragment ion. 
   
@@ -48,9 +48,9 @@ _12C, 13C, 1H, 2H, 35Cl, 37Cl_: the number of atoms for each element
   
 ## Interfering ions tab  
   
-_difflag, difflead_: internal calculations for the difference in m/z values between the two nearest ions.  
+_difflag, difflead_: internal calculations for the difference in m/z values between the two nearest ions. If "interference at MS res?" filter has been used, then the previous/next ions might not be shown. 
   
-_reslag, reslead_: internal calculations for the MS resolution needed to separate the two nearest ions.  
+_reslag, reslead_: internal calculations for the MS resolution needed to separate the two nearest ions. If "interference at MS res?" filter has been used, then the previous/next ions might not be shown.  
   
 _interference_: indicate whether or not the m/z two nearest ions can interfere with each other at the set MS resolution value. _"false"_ means no interference and _"true"_ means there is interference (and therefore the MS resolution cannot resolve these peaks).  
   
