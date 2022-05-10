@@ -91,8 +91,8 @@ server = function(input, output, session) {
         
 
 #----Outputs_Start
-  
-        shiny::observeEvent(input$go1, {
+
+        CP_allions_compl_glob <- eventReactive(input$go1, {
                 
                 # Create a Progress object
                 progress <- shiny::Progress$new()
@@ -108,13 +108,15 @@ server = function(input, output, session) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
                         CP_allions_compl <- rbind(CP_allions_compl, input)
-                        }
+                        return(CP_allions_compl)
+                }
+        })
               
-               
                 
+                shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=TRUE,{
                         # Show data
-                        DT::datatable(CP_allions_compl, 
+                        DT::datatable(CP_allions_compl_glob(), 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
                                   options = list(scrollY = 650,
                                                  scrollX = 500,
@@ -128,24 +130,16 @@ server = function(input, output, session) {
                                                  fixedColumns = TRUE), 
                                   rownames = FALSE)
                         })
-                # output$Plotly <- plotly::renderPlotly(
-                #         plot_ly(CP_allions_compl,
-                #                 x = ~Parent_Formula, 
-                #                 y = ~`m/z`,
-                #                 #size = ~abundance,
-                #                 type = "scatter",
-                #                 mode = "markers",
-                #                 marker = list(
-                #                         color = ~`35Cl`,
-                #                         colorscale = "Hot")
-                #                 )
-                #         )
-                
-                
                 })
-        shiny::observeEvent(input$go2, {
 
-                CP_allions_compl2 <- CP_allions_compl %>%
+                
+
+        
+        shiny::observeEvent(input$go2, {
+                
+                #CP_allions_compl2 <- as.data.frame(CP_allions_compl_glob())
+
+                CP_allions_compl2 <- CP_allions_compl_glob() %>%
                         arrange(`m/z`) %>%
                         mutate(difflag = round(abs(`m/z` - lag(`m/z`, default = first(`m/z`))),6)) %>%
                         mutate(difflead = round(abs(`m/z` - lead(`m/z`, default = last(`m/z`))), 6)) %>%
