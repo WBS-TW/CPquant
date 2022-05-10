@@ -14,6 +14,7 @@ library(tidyverse)
 library(readxl)
 library(plotly)
 library(enviPat)
+library(markdown)
 
 data("isotopes")
 source("./R/getAdduct.R")
@@ -66,10 +67,10 @@ ui <- shiny::navbarPage(
         shiny::tabPanel(
                 "Instructions",
                 shiny::sidebarLayout(
-                        shiny::sidebarPanel(shiny::h3("Instructions"),
+                        shiny::sidebarPanel(shiny::h3("Manual"),
                                             width = 3),
                         shiny::mainPanel(
-                                shiny::withMathJax(shiny::includeMarkdown("instructions.md"))
+                                shiny::includeMarkdown("instructions.md")
                                                 )
                 )
         )
