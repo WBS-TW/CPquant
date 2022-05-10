@@ -55,6 +55,9 @@ _reslag, reslead_: internal calculations for the MS resolution needed to separat
 _interference_: indicate whether or not the m/z two nearest ions can interfere with each other at the set MS resolution value. _"false"_ means no interference and _"true"_ means there is interference (and therefore the MS resolution cannot resolve these peaks).  
   
 
+### Hover text
+_difflag & difflead (prev and next)_: the difference between the m/z with previous and next ions (axis ordered from lowest to highest m/z).  
+_reslag & reslead (prev and next)_: the MS resolution needed to resolve previous and next ion (axis ordered from lowest to highest m/z).  
 
 
 
