@@ -32,7 +32,7 @@ ui <- shiny::navbarPage(
                                         shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 30),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
-                                                choices = c("[CP-Cl]-", "[CP-HCl]-", "[CO-Cl]-", "[CO-HCl]-",
+                                                choices = c("[CP-Cl]-", "[CP-H]-", "[CP-HCl]-", "[CO-Cl]-", "[CO-HCl]-", "[CO-H]-",
                                                 "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+"),
                                                 selected = "[CP-Cl]-",
                                                 multiple = TRUE,
