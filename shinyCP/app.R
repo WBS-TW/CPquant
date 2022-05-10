@@ -2,7 +2,7 @@
 # Add positive and negative ions for LCHRMS:
 # Add EI pos: [M−Cl−2HCl]+
 # https://www.sciencedirect.com/science/article/pii/S0045653519327717?via%3Dihub
-
+# NOT WORKING YET: cannot select multiple adduct/fragments
 
 
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
@@ -110,8 +110,9 @@ server = function(input, output, session) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
                         CP_allions <- rbind(CP_allions, input)
-                        return(CP_allions)
+                        
                 }
+                return(CP_allions)
         })
               
                 
