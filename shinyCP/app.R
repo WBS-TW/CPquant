@@ -161,7 +161,11 @@ server = function(input, output, session) {
                                 y = ~`m/z`,
                                 type = "scatter",
                                 mode = "markers",
-                                color = ~interference)
+                                color = ~interference,
+                                hoverinfo = "text",
+                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                                  '<br>',
+                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment))
                         %>% 
                         plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
@@ -171,7 +175,13 @@ server = function(input, output, session) {
                                 x = ~`m/z`, 
                                 y = ~Rel_ab,
                                 type = "bar",
-                                color = ~interference)
+                                color = ~interference,
+                                #text = ~Fragment,
+                                hoverinfo = "text",
+                                hovertext = paste("Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  '<br>',
+                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment)
+                                )
                         %>% 
                                 plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
