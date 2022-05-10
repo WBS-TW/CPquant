@@ -45,7 +45,7 @@ ui <- shiny::navbarPage(
                                                 selectize = TRUE,
                                                 width = NULL,
                                                 size = NULL),
-                                        shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 10, min = 1, max = 99),
+                                        shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 5, min = 1, max = 99),
                                         shiny::actionButton("go1", "Submit", width = "100%")
                                         ),
                                 shiny::mainPanel(
@@ -120,7 +120,7 @@ server = function(input, output, session) {
               
                 
                 shiny::observeEvent(input$go1, {
-                output$Table <- DT::renderDT(server=TRUE,{
+                output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
                         # Show data
                         DT::datatable(CP_allions_glob(), 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
@@ -128,9 +128,10 @@ server = function(input, output, session) {
                                                  scrollX = 500,
                                                  deferRender = TRUE,
                                                  scroller = TRUE,
-                                                 # paging = TRUE,
-                                                 # pageLength = 25,
-                                                 buttons = list(list(extend = "excel", title = NULL),
+                                                 buttons = list(list(extend = "excel", title = NULL,
+                                                                     exportOptions = list(
+                                                                             modifier = list(page = "all")
+                                                                     )),
                                                                 list(extend = "colvis", targets = 0, visible = FALSE)),
                                                  dom = "lBfrtip",
                                                  fixedColumns = TRUE), 
@@ -178,7 +179,7 @@ server = function(input, output, session) {
                                 plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
                 
-                output$Table2 <- DT::renderDT(server=TRUE,{
+                output$Table2 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
                         # Show data
                         DT::datatable(CP_allions_compl2, 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
@@ -186,9 +187,10 @@ server = function(input, output, session) {
                                                  scrollX = 500,
                                                  deferRender = TRUE,
                                                  scroller = TRUE,
-                                                 # paging = TRUE,
-                                                 # pageLength = 25,
-                                                 buttons = list(list(extend = "excel", title = NULL),
+                                                 buttons = list(list(extend = "excel", title = NULL,
+                                                                     exportOptions = list(
+                                                                             modifier = list(page = "all")
+                                                                     )),
                                                                 list(extend = "colvis", targets = 0, visible = FALSE)),
                                                  dom = "lBfrtip",
                                                  fixedColumns = TRUE), 
