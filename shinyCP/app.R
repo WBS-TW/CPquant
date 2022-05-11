@@ -10,6 +10,7 @@ library(DT)
 library(tidyverse)
 library(readxl)
 library(plotly)
+library(crosstalk)
 library(enviPat)
 library(markdown)
 
@@ -21,7 +22,7 @@ source("./R/getAdduct.R")
 #--------------------------------UI function----------------------------------#
 
 ui <- shiny::navbarPage(
-        "Chlorinated paraffin ions generator",
+        "Chlorinated paraffins/olefins ion explorer",
         theme = shinythemes::shinytheme('spacelab'),
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
@@ -161,11 +162,15 @@ server = function(input, output, session) {
                                 mode = "markers",
                                 color = ~interference,
                                 hoverinfo = "text",
-                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                hovertext = paste("Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  '<br>',
+                                                  "Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
                                                   "Adduct/Fragment:", CP_allions_compl2$Fragment))
                         %>% 
-                        plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
+                        plotly::layout(xaxis = list(title = "Number of carbons (12C+13C)"),
+                                       yaxis = list(title = "Number of chlorines (35Cl+37Cl)"),
+                                legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
                 
                 output$Plotly2 <- plotly::renderPlotly(
@@ -176,7 +181,9 @@ server = function(input, output, session) {
                                 color = ~interference,
                                 #text = ~Fragment,
                                 hoverinfo = "text",
-                                hovertext = paste("Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                                  '<br>',
+                                                  "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
                                                   '<br>',
                                                   "Adduct/Fragment:", CP_allions_compl2$Fragment,
                                                   '<br>',

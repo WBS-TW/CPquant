@@ -11,6 +11,7 @@ library(tidyverse)
 library(readxl)
 library(plotly)
 library(enviPat)
+library(crosstalk)
 library(markdown)
 
 data("isotopes")
@@ -152,8 +153,12 @@ server = function(input, output, session) {
                         )
                         )
                 
+                CP_allions_compl2 <- crosstalk::SharedData$new(CP_allions_compl2)
                 
                 output$Plotly <- plotly::renderPlotly(
+                        
+                        #plotly_sel1
+                        
                         p <- CP_allions_compl2 %>% plot_ly(
                                 x = ~ (`12C`+`13C`), 
                                 y = ~(`35Cl`+`37Cl`),
