@@ -101,6 +101,7 @@ server = function(input, output, session) {
                 on.exit(progress$close())
                 progress$set(message = "Calculating", value = 0)
                 
+                
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get adducts or fragments

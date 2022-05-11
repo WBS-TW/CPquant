@@ -128,6 +128,10 @@ server = function(input, output, session) {
                                                                      exportOptions = list(
                                                                              modifier = list(page = "all")
                                                                      )),
+                                                                list(extend = "csv", title = NULL,
+                                                                     exportOptions = list(
+                                                                             modifier = list(page = "all")
+                                                                     )),
                                                                 list(extend = "colvis", targets = 0, visible = FALSE)),
                                                  dom = "lBfrtip",
                                                  fixedColumns = TRUE), 
@@ -206,6 +210,10 @@ server = function(input, output, session) {
                                                  deferRender = TRUE,
                                                  scroller = TRUE,
                                                  buttons = list(list(extend = "excel", title = NULL,
+                                                                     exportOptions = list(
+                                                                             modifier = list(page = "all")
+                                                                     )),
+                                                                list(extend = "csv", title = NULL,
                                                                      exportOptions = list(
                                                                              modifier = list(page = "all")
                                                                      )),
