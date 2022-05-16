@@ -166,11 +166,15 @@ server = function(input, output, session) {
                                 mode = "markers",
                                 color = ~interference,
                                 hoverinfo = "text",
-                                hovertext = paste("Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
-                                                  "Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                                  "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
                                                   '<br>',
-                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment))
+                                                  "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  '<br>',
+                                                  "Fragment isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                                      "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`))
+                                )
                         %>% 
                         plotly::layout(xaxis = list(title = "Number of carbons (12C+13C)"),
                                        yaxis = list(title = "Number of chlorines (35Cl+37Cl)"),
@@ -187,9 +191,12 @@ server = function(input, output, session) {
                                 hoverinfo = "text",
                                 hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
+                                                  "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
+                                                  '<br>',
                                                   "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
                                                   '<br>',
-                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment,
+                                                  "Fragment isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                                               "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`),
                                                   '<br>',
                                                   "m/z:", CP_allions_compl2$`m/z`,
                                                   '<br>',
