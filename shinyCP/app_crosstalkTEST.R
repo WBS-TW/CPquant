@@ -10,8 +10,8 @@ library(DT)
 library(tidyverse)
 library(readxl)
 library(plotly)
-library(enviPat)
 library(crosstalk)
+library(enviPat)
 library(markdown)
 
 data("isotopes")
@@ -22,7 +22,7 @@ source("./R/getAdduct.R")
 #--------------------------------UI function----------------------------------#
 
 ui <- shiny::navbarPage(
-        "Chlorinated paraffin ions generator",
+        "Chlorinated paraffins/olefins ion explorer",
         theme = shinythemes::shinytheme('spacelab'),
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
@@ -101,7 +101,6 @@ server = function(input, output, session) {
                 on.exit(progress$close())
                 progress$set(message = "Calculating", value = 0)
                 
-                
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get adducts or fragments
@@ -126,6 +125,10 @@ server = function(input, output, session) {
                                                      deferRender = TRUE,
                                                      scroller = TRUE,
                                                      buttons = list(list(extend = "excel", title = NULL,
+                                                                         exportOptions = list(
+                                                                                 modifier = list(page = "all")
+                                                                         )),
+                                                                    list(extend = "csv", title = NULL,
                                                                          exportOptions = list(
                                                                                  modifier = list(page = "all")
                                                                          )),
@@ -157,9 +160,6 @@ server = function(input, output, session) {
                 CP_allions_compl2 <- crosstalk::SharedData$new(CP_allions_compl2)
                 
                 output$Plotly <- plotly::renderPlotly(
-                        
-                        #plotly_sel1
-                        
                         p <- CP_allions_compl2 %>% plot_ly(
                                 x = ~ (`12C`+`13C`), 
                                 y = ~(`35Cl`+`37Cl`),
@@ -169,9 +169,17 @@ server = function(input, output, session) {
                                 hoverinfo = "text",
                                 hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
-                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment))
+                                                  "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
+                                                  '<br>',
+                                                  "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  '<br>',
+                                                  "Fragment isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                                               "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`))
+                        )
                         %>% 
-                                plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
+                                plotly::layout(xaxis = list(title = "Number of carbons (12C+13C)"),
+                                               yaxis = list(title = "Number of chlorines (35Cl+37Cl)"),
+                                               legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
                 
                 output$Plotly2 <- plotly::renderPlotly(
@@ -182,9 +190,14 @@ server = function(input, output, session) {
                                 color = ~interference,
                                 #text = ~Fragment,
                                 hoverinfo = "text",
-                                hovertext = paste("Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
-                                                  "Adduct/Fragment:", CP_allions_compl2$Fragment,
+                                                  "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
+                                                  '<br>',
+                                                  "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  '<br>',
+                                                  "Fragment isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                                               "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`),
                                                   '<br>',
                                                   "m/z:", CP_allions_compl2$`m/z`,
                                                   '<br>',
@@ -205,6 +218,10 @@ server = function(input, output, session) {
                                                      deferRender = TRUE,
                                                      scroller = TRUE,
                                                      buttons = list(list(extend = "excel", title = NULL,
+                                                                         exportOptions = list(
+                                                                                 modifier = list(page = "all")
+                                                                         )),
+                                                                    list(extend = "csv", title = NULL,
                                                                          exportOptions = list(
                                                                                  modifier = list(page = "all")
                                                                          )),
