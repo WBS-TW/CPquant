@@ -28,7 +28,7 @@ __[xx]-__ and __[xx]+__ refers to the charge of the ion (limited to single charg
   
 [M+Cl-HCl]- can also be written as [M-H]-  
   
-__Isotope rel ab threshold (%)__: is the threshold for relative abundance for isotopologues for each chemical formula of the adduct/fragment ion. 
+__Isotope rel ab threshold (%)__: is the threshold for relative abundance for isotopologues for each chemical formula of the adduct/fragment ion. Ions below this threshold will not be included into the generated ion table.
   
 ### Output table  
   
