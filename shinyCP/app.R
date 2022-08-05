@@ -29,11 +29,11 @@ ui <- shiny::navbarPage(
                                 shiny::sidebarPanel(
                                         shiny::numericInput("Cmin", "C atoms min", value = 9, min = 3, max = 30),
                                         shiny::numericInput("Cmax", "C atoms max", value = 30, min = 4, max = 30),
-                                        shiny::numericInput("Clmin", "Cl atoms min)", value = 3, min = 1, max = 30),
-                                        shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 30),
+                                        shiny::numericInput("Clmin", "Cl atoms min)", value = 3, min = 1, max = 15),
+                                        shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 15),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
-                                                choices = c("[CP-Cl]-", "[CP-H]-", "[CP-HCl]-", "[CO-Cl]-", "[CO-HCl]-", "[CO-H]-",
+                                                choices = c("[CP-Cl]-", "[CP-H]-", "[CP-HCl]-", "[CP-Cl-HCl]-", "[CP-2Cl-HCl]-", "[CO-Cl]-", "[CO-HCl]-", "[CO-H]-",
                                                 "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+"),
                                                 selected = "[CP-Cl]-",
                                                 multiple = TRUE,
@@ -83,7 +83,7 @@ ui <- shiny::navbarPage(
 
 server = function(input, output, session) {
         
-        # Set values from user input
+        # Set reactive values from user input
         C <- eventReactive(input$go1, {as.integer(input$Cmin:input$Cmax)})
         Cl <- eventReactive(input$go1, {as.integer(input$Clmin:input$Clmax)})
         threshold <- eventReactive(input$go1, {as.integer(input$threshold)})
@@ -95,8 +95,9 @@ server = function(input, output, session) {
 
         CP_allions_glob <- eventReactive(input$go1, {
                 
-                # Create a Progress object
+                # Create a Progress bar object
                 progress <- shiny::Progress$new()
+                
                 # Make sure it closes when we exit this reactive, even if there's an error
                 on.exit(progress$close())
                 progress$set(message = "Calculating", value = 0)
@@ -116,7 +117,7 @@ server = function(input, output, session) {
               
                 
                 shiny::observeEvent(input$go1, {
-                output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
+                output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, this will also give warning about large tables
                         # Show data
                         DT::datatable(CP_allions_glob(), 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
@@ -157,7 +158,7 @@ server = function(input, output, session) {
                                 )
                                )
 
-                
+                # Output scatterplot: #Cl vs #C
                 output$Plotly <- plotly::renderPlotly(
                         p <- CP_allions_compl2 %>% plot_ly(
                                 x = ~ (`12C`+`13C`), 
@@ -181,6 +182,7 @@ server = function(input, output, session) {
                                 legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
                 
+                # Output the interference bar plot: Rel_ab vs m/z
                 output$Plotly2 <- plotly::renderPlotly(
                         p <- CP_allions_compl2 %>% plot_ly(
                                 x = ~`m/z`, 

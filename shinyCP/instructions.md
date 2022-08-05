@@ -9,24 +9,24 @@ Utilizes the isopattern function of the R package Envipat (Loos et al, Analytica
 
 ## Instructions    
 Choose the parameters in the _Initial settings_ tab. Press submit and wait for calculation to finish. A table will then be generated with all ions that conform with the initial setting parameters. The table can be exported to excel by clicking on the "Excel" button at the top.  
-The _Interfering ions_ tab can be used to check for ions that interfer with each other at the set resolution of the mass spectrometer. Default is set to R=60,000. The plots and tables are interactive and the user can filter the _Interference at MS res?_ by clicking on _FALSE_ on the plot legend (and thereby keeping all _TRUE_ ions, which will remove all ions that can be resolved by the set MS resolution).
+The _Interfering ions_ tab can be used to check for ions that interfer with each other at the set resolution of the mass spectrometer. Default is set to R=60,000. The plots and tables are interactive and the user can filter the _"Interference at MS res?"_ by clicking on _FALSE_ on the plot legend (and thereby keeping all _TRUE_ ions, which will remove all ions that can be resolved by the set MS resolution).
 
 
 ## Initial settings tab
   
 __C atoms min__ and __C atoms max__: is the range of number of carbon atoms to generate. Minimum value is C=3 and maximum is C=30. 
   
-__Cl atoms min__ and __Cl atoms max__: is the range of number of chlorine atoms to generate. Minimum value is C=3 and maximum is C=30.  
+__Cl atoms min__ and __Cl atoms max__: is the range of number of chlorine atoms to generate. Maximum number of Cl has been limited to 15.  
   
 __Add adducts/fragments__: refers to the formula of adducts and/or fragments to generate from a set list of available options. Multiple selections are possible.  
   
 __[CP]__ and __[CO]__: refers to either chlorinated paraffins [CP] or chlorinated (mono)olefins [CO]. 
   
-__[xx-yy]__ or __[xx-yy-zz]__: where _-yy_ or _-yy-zz_ refers to the adduct/fragment ions. Currently, a limited selection is available but more can be added later if requested.  
+__[xx-yy]__ or __[xx-yy-zz]__: where _-yy_ refers to the adduct/fragment ions or _-yy-zz_ which are the consecutive loss fragments. Currently, a limited selection is available but more can be added upon request.  
   
 __[xx]-__ and __[xx]+__ refers to the charge of the ion (limited to single charged species, +1 or -1).  
   
-[M+Cl-HCl]- can also be written as [M-H]-  
+_Note that [M+Cl-HCl]- can also be written as [M-H]-_  
   
 __Isotope rel ab threshold (%)__: is the threshold for relative abundance for isotopologues for each chemical formula of the adduct/fragment ion. Ions below this threshold will not be included into the generated ion table.
   

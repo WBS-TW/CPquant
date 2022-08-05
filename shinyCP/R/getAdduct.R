@@ -2,21 +2,21 @@
 
 getAdduct <- function(adduct_ions, C, Cl, threshold) {
         
-        ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # lookbehind assertion to extract ion mode
+        ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # Using lookbehind assertion to extract ion mode
         fragment_ions <- str_extract(adduct_ions, "(?<=.{3}).+?(?=\\])") # extract after the 2nd character and before ]
-        group <- str_extract(adduct_ions, "[^\\[].{1}") # positive lookbehind for [)
+        group <- str_extract(adduct_ions, "[^\\[].{1}") # Using positive lookbehind for [)
         
         if (group == "CP") {
                 data <- crossing(C, Cl) %>% #set combinations of C and Cl
                         filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
-                        filter(Cl < 15) %>% # limit chlorination level. CHECK WITH LCCPs!!
+                        filter(Cl < 15) %>% # limit chlorine atoms. CHECK WITH LCCPs!!
                         mutate(H = 2*C+2-Cl) %>% # add H atoms
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
                         select(Formula, C, H, Cl) # move Formula to first column
         } else if (group == "CO") {
                 data <- crossing(C, Cl) %>% #set combinations of C and Cl
                         filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
-                        filter(Cl < 15) %>% # limit chlorination level CHECK WITH LCCPs!!
+                        filter(Cl < 15) %>% # limit chlorine atoms. CHECK WITH LCCPs!!
                         mutate(H = 2*C-Cl) %>% # add H atoms
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
                         select(Formula, C, H, Cl) # move Formula to first column
@@ -83,12 +83,20 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                         mutate(H = H-2) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
                         select(Parent, Charge, Fragment, Formula, C, H, Cl)
-        } else if (fragment_ions == "-Cl-3HCl") { # Generate fragments M-Cl-HCl for each homolog formula
+        } else if (fragment_ions == "-Cl-3HCl") { # Generate fragments M-Cl-3HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl-4) %>%
                         mutate(H = H-3) %>%
+                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+                        select(Parent, Charge, Fragment, Formula, C, H, Cl)
+        }else if (fragment_ions == "-2Cl-HCl") { # Generate fragments M-2Cl-HCl for each homolog formula
+                data <- data %>%
+                        mutate(Parent = Formula) %>% 
+                        mutate(Fragment = adduct_ions) %>%
+                        mutate(Cl = Cl-3) %>%
+                        mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
                         select(Parent, Charge, Fragment, Formula, C, H, Cl)
         }

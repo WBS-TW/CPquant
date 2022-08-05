@@ -30,6 +30,26 @@ adducts <- adducts %>% bind_rows(Cl_adducts)
 ```
 
 
+__Papers__:  
+- Method validation and comparison of quantification strategies for analysis of chlorinated paraffins in indoor dust by liquid chromatography and high-resolution mass spectrometry. 10.20517/jeea.2021.10  
+- The impact of baking on chlorinated paraffins: Characterization of C10–C17 chlorinated paraffins in oven-baked pastry products and unprocessed pastry dough by HPLC–ESI–Q–TOF–MS. https://doi.org/10.1016/j.foodchem.2019.125100  
+
+__Github__:  
+- https://github.com/ingusperkons/CP-Crawler  
+
+
+# Quantification according to Yuan et al
+
+```{r quant_yuanbo}
+# Quantifying Short-Chain Chlorinated Paraffin Congener Groups
+
+
+
+```
+
+
+
+# Old notes
 
 Manually generate theoretical CP homologs
 ```{r}
