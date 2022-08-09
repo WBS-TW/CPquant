@@ -44,6 +44,10 @@ __Github__:
 # Quantifying Short-Chain Chlorinated Paraffin Congener Groups
 
 
+C = 9
+Cl = 5
+
+
 
 ```
 

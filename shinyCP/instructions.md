@@ -33,6 +33,8 @@ __Isotope rel ab threshold (%)__: is the threshold for relative abundance for is
 ### Output table  
   
 __Parent_Formula__: the chemical formula of the molecular ion.  
+
+__Cl_perc__: the chlorination degree (mass percentage of Cl).  
   
 __Charge__: The charge of the ion.  
   
