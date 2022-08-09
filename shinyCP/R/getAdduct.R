@@ -41,7 +41,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         if (fragment_ions == "-Cl") { # Generate fragments M-Cl for each homolog formula  
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
@@ -49,7 +50,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         } else if (fragment_ions == "-H") { # Generate fragments M-H for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
@@ -58,7 +60,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
                         mutate(Fragment = adduct_ions) %>%
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Cl = Cl-1) %>%
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
@@ -66,7 +69,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         } else if (fragment_ions == "+Cl") { # Generate fragments M+Cl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>%
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl+1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
@@ -74,7 +78,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         } else if (fragment_ions == "-Cl-HCl") { # Generate fragments M-Cl-HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl-2) %>%
                         mutate(H = H-1) %>%
@@ -83,7 +88,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         } else if (fragment_ions == "-Cl-2HCl") { # Generate fragments M-Cl2HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl-3) %>%
                         mutate(H = H-2) %>%
@@ -92,7 +98,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         } else if (fragment_ions == "-Cl-3HCl") { # Generate fragments M-Cl-3HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl-4) %>%
                         mutate(H = H-3) %>%
@@ -101,7 +108,8 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         }else if (fragment_ions == "-2Cl-HCl") { # Generate fragments M-2Cl-HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2)) %>%
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Fragment = adduct_ions) %>%
                         mutate(Cl = Cl-3) %>%
                         mutate(H = H-1) %>%
