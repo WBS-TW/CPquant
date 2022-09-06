@@ -15,6 +15,7 @@ library(tidyverse)
 library(readxl)
 library(rcdk)
 library(enviPat)
+library(reticulate)
 
 data("isotopes")
 data("adducts")
@@ -51,6 +52,36 @@ Cl = 5
 
 ```
 
+
+# test Hungarian algorithm
+```{r hungarian}
+
+set.seed(593903)
+
+library(RcppHungarian)
+library(ggplot2)
+
+# humans are rows (5), dogs are columns (4)
+cost <- rbind(c(1,5,2,19), 
+              c(4,0,3,10), 
+              c(6,9,6,1), 
+              c(9,8,1,3), 
+              c(6,1,1,1))
+HungarianSolver(cost)
+
+```
+
+```{python}
+library(reticulate)
+import pandas
+py_install("rdkit")
+from rdkit import Chem
+from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers, StereoEnumerationOptions
+m = Chem.MolFromSmiles('BrC=CC1OC(C2)(F)C2(Cl)C1')
+isomers = tuple(EnumerateStereoisomers(m))
+len(isomers)
+
+```
 
 
 # Old notes
