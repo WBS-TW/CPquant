@@ -4,6 +4,9 @@
 
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
 
+# TO FIX
+# something wrong with resolution calculations and always gives false
+
 library(shiny)
 library(shinythemes)
 library(DT)
@@ -115,7 +118,7 @@ server = function(input, output, session) {
                 return(CP_allions)
         })
               
-                
+                # Calculate the isotopes from initial settings tab
                 shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, this will also give warning about large tables
                         # Show data
@@ -142,7 +145,7 @@ server = function(input, output, session) {
 
                 
 
-        
+        # Calculates the interfering ions tab
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -152,11 +155,14 @@ server = function(input, output, session) {
                         mutate(reslag = round(`m/z`/difflag, 0)) %>%
                         mutate(reslead = round(`m/z`/difflead, 0)) %>%
                         mutate(interference = case_when(
-                                difflag == 0 | difflead == 0 ~ FALSE,
+                                difflag == 0 | difflead == 0 ~ TRUE, # need to keep this true to make same mass ions TRUE but need to 
                                 reslag >= as.integer(MSresolution()) | reslead >= as.integer(MSresolution()) ~ TRUE,
                                 reslag < as.integer(MSresolution()) & reslead < as.integer(MSresolution()) ~ FALSE
                                 )
                                )
+                # change first and last row is false since their lead/lag is zero
+                CP_allions_compl2$interference[1] <- FALSE
+                CP_allions_compl2$interference[length(CP_allions_compl2$interference)] <- FALSE
 
                 # Output scatterplot: #Cl vs #C
                 output$Plotly <- plotly::renderPlotly(
