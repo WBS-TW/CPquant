@@ -105,6 +105,16 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                         mutate(H = H-3) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
                         select(Parent, Cl_perc, Charge, Fragment, Formula, C, H, Cl)
+        } else if (fragment_ions == "-Cl-4HCl") { # Generate fragments M-Cl-3HCl for each homolog formula
+                data <- data %>%
+                        mutate(Parent = Formula) %>% 
+                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Fragment = adduct_ions) %>%
+                        mutate(Cl = Cl-5) %>%
+                        mutate(H = H-4) %>%
+                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
+                        select(Parent, Cl_perc, Charge, Fragment, Formula, C, H, Cl)
         }else if (fragment_ions == "-2Cl-HCl") { # Generate fragments M-2Cl-HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 

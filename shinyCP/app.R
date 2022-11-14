@@ -2,10 +2,10 @@
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 # ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
-# Reactive log: https://shiny.rstudio.com/articles/debugging.html
+# use isowrap instead to get more accurate profile isotopic fine structure
+# Add BCP and BCO: https://pubs.acs.org/doi/10.1021/acs.est.2c03576
 
-# TO FIX
-# something wrong with resolution calculations and always gives false
+# Reactive log: https://shiny.rstudio.com/articles/debugging.html
 
 library(shiny)
 library(shinythemes)
@@ -37,7 +37,7 @@ ui <- shiny::navbarPage(
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
                                                 choices = c("[CP-Cl]-", "[CP-H]-", "[CP-HCl]-", "[CP-Cl-HCl]-", "[CP-2Cl-HCl]-", "[CP+Cl]-", "[CO-Cl]-", "[CO-HCl]-", "[CO-H]-",
-                                                "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+"),
+                                                "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+", "[CP-Cl-4HCl]+"),
                                                 selected = "[CP-Cl]-",
                                                 multiple = TRUE,
                                                 selectize = TRUE,

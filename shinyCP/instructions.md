@@ -63,7 +63,7 @@ __interference__: indicate whether or not the m/z two nearest ions can interfere
 
 ### Plot outputs  
   
-Some bars can exceed 100% in relative abundance in the y-axis, and this indicates that some isotopologues have the exact same ion formula.
+Note: Some bars can exceed 100% in relative abundance in the y-axis, and this indicates that some isotopologues have the exact same ion formula. You can hover over the different segments of these bars to check the overlapping mass ions.
 
 __Hover text__:   
 __difflag & difflead (prev and next)__: the difference between the m/z with previous and next ions (axis ordered from lowest to highest m/z).  
