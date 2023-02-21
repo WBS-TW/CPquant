@@ -43,7 +43,7 @@ ui <- shiny::navbarPage(
                                                 selectize = TRUE,
                                                 width = NULL,
                                                 size = NULL),
-                                        shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 5, min = 1, max = 99),
+                                        shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 5, min = 0, max = 99),
                                         shiny::actionButton("go1", "Submit", width = "100%"),
                                         width = 3),
                                 shiny::mainPanel(
@@ -120,7 +120,7 @@ server = function(input, output, session) {
               
                 # Calculate the isotopes from initial settings tab
                 shiny::observeEvent(input$go1, {
-                output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, this will also give warning about large tables
+                output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                         # Show data
                         DT::datatable(CP_allions_glob(), 
                                   filter = "top", extensions = c("Buttons", "Scroller"),
