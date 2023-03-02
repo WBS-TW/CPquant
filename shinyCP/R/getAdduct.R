@@ -137,7 +137,12 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         
         
         # function to get isotopic patterns for all CPs. Limit the threshold to 10%, neutral form. data("isotopes") needs to be loaded first
-        getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, chemforms = x, threshold = threshold, plotit = FALSE, charge = Charge)}
+        getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, 
+                                                        chemforms = x, 
+                                                        threshold = threshold, 
+                                                        emass = 0.00054857990924,
+                                                        plotit = FALSE, 
+                                                        charge = Charge)}
         
         for (j in seq_along(data$Formula)) {
                 Formula <- data$Formula[j]
