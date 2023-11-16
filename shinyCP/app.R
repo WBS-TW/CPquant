@@ -1,4 +1,5 @@
 # TODO
+# New tab Skyline
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 # ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
@@ -19,6 +20,7 @@ library(markdown)
 
 data("isotopes")
 source("./R/getAdduct.R")
+source("./R/getSkyline.R")
 
 
 
@@ -66,6 +68,19 @@ ui <- shiny::navbarPage(
                                 )
                                 )
                                 )),
+        shiny::tabPanel("Skyline",
+                        shiny::fluidPage(shiny::sidebarLayout(
+                                shiny::sidebarPanel(
+                                        shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
+                                        shiny::actionButton("go3", "Transition List", width = "100%"),
+                                        width = 3
+                                ),
+                                shiny::mainPanel(
+                                        DT::dataTableOutput("Table3", width = "100%")
+                                        
+                                )
+                        )
+                        )),
         shiny::tabPanel(
                 "Instructions",
                 shiny::sidebarLayout(
@@ -118,7 +133,7 @@ server = function(input, output, session) {
                 return(CP_allions)
         })
               
-                # Calculate the isotopes from initial settings tab
+                # go1: Calculate the isotopes from initial settings tab
                 shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                         # Show data
@@ -142,10 +157,11 @@ server = function(input, output, session) {
                                   rownames = FALSE)
                         })
                 })
+        # go1 end
 
                 
 
-        # Calculates the interfering ions tab
+        # go2: Calculates the interfering ions tab
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -238,6 +254,57 @@ server = function(input, output, session) {
                                   rownames = FALSE)
                 })
                 })
+        # go2 end
+        
+        # go3: Skyline tab
+        shiny::observeEvent(input$go3, {
+                
+                CP_allions_skyline <- CP_allions_glob() %>%
+                        mutate(`Molecule List Name` = paste0("C", `12C`)) %>%
+                        rename(`Molecule Name` = Parent_Formula) %>%
+                        mutate(`Molecular Formula` = case_when(
+                                `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
+                                `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
+                        )) %>%
+                        mutate(`Precursor Adduct` = str_replace(Fragment, "\\].*", "]")) %>%
+                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "\\[.*\\+", "[M+")) %>%
+                        rename(`Precursor Charge` = Charge) %>%
+                        add_column(`Explicit Retention Time` = NA) %>%
+                        add_column(`Explicit Retention Time Window` = NA) %>%
+                        mutate(Note = case_when(
+                                `12C` < 10 ~ "vSCCP",
+                                `12C` >= 10 & `12C` < 14 ~ "SCCPs",
+                                `12C` >= 14 & `12C` < 18 ~ "MCCPs",
+                                `12C` >= 18 ~ "LCCPs")) %>%
+                        select(`Molecule List Name`, `Molecule Name`, `Molecular Formula`, `Precursor Adduct`, 
+                               `Precursor Charge`, `Explicit Retention Time`, `Explicit Retention Time Window`)
+                
+                
+                
+                
+                output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
+                        # Show data
+                        DT::datatable(CP_allions_skyline, 
+                                      filter = "top", extensions = c("Buttons", "Scroller"),
+                                      options = list(scrollY = 650,
+                                                     scrollX = 500,
+                                                     deferRender = TRUE,
+                                                     scroller = TRUE,
+                                                     buttons = list(list(extend = "excel", title = "Transition List",
+                                                                         exportOptions = list(
+                                                                                 modifier = list(page = "all")
+                                                                         )),
+                                                                    list(extend = "csv", title = "Transition List",
+                                                                         exportOptions = list(
+                                                                                 modifier = list(page = "all")
+                                                                         )),
+                                                                    list(extend = "colvis", targets = 0, visible = FALSE)),
+                                                     dom = "lBfrtip",
+                                                     fixedColumns = TRUE), 
+                                      rownames = FALSE)
+                })
+        })
+        # go3 end
         
 #----Outputs_End
 
