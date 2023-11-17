@@ -5,10 +5,8 @@ account: wbs-tw
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6270627
-bundleId: 6450673
+bundleId: 7938421
 url: https://wbs-tw.shinyapps.io/shinyCP/
-when: 1666958262.53427
-lastSyncTime: 1666958262.53427
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: app_crosstalkTEST.R
+ignoredFiles: app_crosstalkTEST.R|manual_test_params.R

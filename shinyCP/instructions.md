@@ -68,9 +68,13 @@ Note: Some bars can exceed 100% in relative abundance in the y-axis, and this in
 __Hover text__:   
 __difflag & difflead (prev and next)__: the difference between the m/z with previous and next ions (axis ordered from lowest to highest m/z).  
 __reslag & reslead (prev and next)__: the MS resolution needed to resolve previous and next ion (axis ordered from lowest to highest m/z).  
+  
+  
+## Skyline tab  
 
-
-
+__TO BE ADDED__
+  
+  
 
 
 

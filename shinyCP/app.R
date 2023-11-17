@@ -1,5 +1,6 @@
 # TODO
-# New tab Skyline
+# New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold
+
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 # ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
@@ -20,7 +21,7 @@ library(markdown)
 
 data("isotopes")
 source("./R/getAdduct.R")
-source("./R/getSkyline.R")
+#source("./R/getSkyline.R")
 
 
 
@@ -71,9 +72,11 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Skyline",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
+                                        #shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
                                         shiny::actionButton("go3", "Transition List", width = "100%"),
-                                        width = 3
+                                        shiny::checkboxInput("checkMonoIso", "NOT WRK YET Always Include MonoIso", FALSE),
+                                        shiny::checkboxInput("checkSomething", "NOT WRK YET", FALSE),
+                                        width = 4
                                 ),
                                 shiny::mainPanel(
                                         DT::dataTableOutput("Table3", width = "100%")
