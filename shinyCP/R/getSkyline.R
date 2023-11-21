@@ -37,6 +37,8 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
         }
         
         # generate input data for envipat based on fragment_ions
+        
+         # Generate fragments M-Cl for each homolog formula  
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
                         mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
@@ -45,6 +47,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Cl = Cl) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
                         select(Parent, Cl_perc, Charge, Fragment, Formula, C, H, Cl)
+         
         
         # Remove formula without Cl after adduct formations
         data <- data %>%
@@ -103,7 +106,6 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Fragment = paste0(adduct_ions, " ", Isotopologue)) %>%
                         rename(Rel_ab = abundance) %>%
                         select(Parent_Formula, Cl_perc, Charge, Fragment, Frag_MonoIso_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
-                
                 data_ls[[j]] <- dat
         }
         

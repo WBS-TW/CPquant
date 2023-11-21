@@ -21,7 +21,7 @@ library(markdown)
 
 data("isotopes")
 source("./R/getAdduct.R")
-#source("./R/getSkyline.R")
+source("./R/getSkyline.R")
 
 
 
@@ -33,14 +33,26 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("Cmin", "C atoms min", value = 9, min = 3, max = 30),
-                                        shiny::numericInput("Cmax", "C atoms max", value = 30, min = 4, max = 30),
-                                        shiny::numericInput("Clmin", "Cl atoms min)", value = 3, min = 1, max = 15),
-                                        shiny::numericInput("Clmax", "Cl atoms max", value = 15, min = 1, max = 15),
+                                        shiny::numericInput("Cmin", "C atoms min (<=30)", value = 9, min = 3, max = 30),
+                                        shiny::numericInput("Cmax", "C atoms max (<=30)", value = 30, min = 4, max = 30),
+                                        shiny::numericInput("Clmin", "Cl atoms min (<=15))", value = 3, min = 1, max = 15),
+                                        shiny::numericInput("Clmax", "Cl atoms max (<=15)", value = 15, min = 1, max = 15),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
-                                                choices = c("[CP-Cl]-", "[CP-H]-", "[CP-HCl]-", "[CP-Cl-HCl]-", "[CP-2Cl-HCl]-", "[CP+Cl]-", "[CO-Cl]-", "[CO-HCl]-", "[CO-H]-",
-                                                "[CP-Cl-HCl]+", "[CP-Cl-2HCl]+", "[CP-Cl-3HCl]+", "[CP-Cl-4HCl]+"),
+                                                choices = c("[CP-Cl]-", 
+                                                            "[CP-H]-", 
+                                                            "[CP-HCl]-", 
+                                                            #"[CP-Cl-HCl]-", #Needs to verify that regex extraction in getAdduct can get these ions before adding these
+                                                            #"[CP-2Cl-HCl]-", 
+                                                            "[CP+Cl]-", 
+                                                            "[CO-Cl]-", 
+                                                            "[CO-HCl]-", 
+                                                            "[CO-H]-"
+                                                            #"[CP-Cl-HCl]+", 
+                                                            #"[CP-Cl-2HCl]+", 
+                                                            #"[CP-Cl-3HCl]+", 
+                                                            #"[CP-Cl-4HCl]+"),
+                                                ),
                                                 selected = "[CP-Cl]-",
                                                 multiple = TRUE,
                                                 selectize = TRUE,
@@ -136,7 +148,7 @@ server = function(input, output, session) {
                 return(CP_allions)
         })
               
-                # go1: Calculate the isotopes from initial settings tab
+# go1: Calculate the isotopes from initial settings tab
                 shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                         # Show data
@@ -160,11 +172,11 @@ server = function(input, output, session) {
                                   rownames = FALSE)
                         })
                 })
-        # go1 end
+# go1 end
 
                 
 
-        # go2: Calculates the interfering ions tab
+# go2: Calculates the interfering ions tab
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -174,12 +186,12 @@ server = function(input, output, session) {
                         mutate(reslag = round(`m/z`/difflag, 0)) %>%
                         mutate(reslead = round(`m/z`/difflead, 0)) %>%
                         mutate(interference = case_when(
-                                difflag == 0 | difflead == 0 ~ TRUE, # need to keep this true to make same mass ions TRUE but need to 
+                                difflag == 0 | difflead == 0 ~ TRUE, # need to keep this true to make same mass ions TRUE
                                 reslag >= as.integer(MSresolution()) | reslead >= as.integer(MSresolution()) ~ TRUE,
                                 reslag < as.integer(MSresolution()) & reslead < as.integer(MSresolution()) ~ FALSE
                                 )
                                )
-                # change first and last row is false since their lead/lag is zero
+                # change first and last row to false since their lead/lag is zero
                 CP_allions_compl2$interference[1] <- FALSE
                 CP_allions_compl2$interference[length(CP_allions_compl2$interference)] <- FALSE
 
@@ -257,20 +269,42 @@ server = function(input, output, session) {
                                   rownames = FALSE)
                 })
                 })
-        # go2 end
+# go2 end
         
-        # go3: Skyline tab
+# go3: Skyline tab
+        
+        CP_allions_skyline <- eventReactive(input$go3, {
+                
+                # Create a Progress bar object
+                progress <- shiny::Progress$new()
+                
+                # Make sure it closes when we exit this reactive, even if there's an error
+                on.exit(progress$close())
+                progress$set(message = "Calculating", value = 0)
+                
+                Adducts <- as.character(selectedAdducts())
+                
+                # function to get adducts or fragments
+                CP_allions <- list()
+                for (i in seq_along(Adducts)) {
+                        progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
+                        input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
+                        CP_allions <- rbind(CP_allions, input)
+                        
+                }
+                return(CP_allions)
+        })
         shiny::observeEvent(input$go3, {
                 
-                CP_allions_skyline <- CP_allions_glob() %>%
+                CP_allions_skyline <- CP_allions_skyline() %>%
                         mutate(`Molecule List Name` = paste0("C", `12C`)) %>%
                         rename(`Molecule Name` = Parent_Formula) %>%
                         mutate(`Molecular Formula` = case_when(
                                 `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
                                 `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
                         )) %>%
-                        mutate(`Precursor Adduct` = str_replace(Fragment, "\\].*", "]")) %>%
-                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "\\[.*\\+", "[M+")) %>%
+                        mutate(`Precursor Adduct` = str_replace(Fragment, "\\].*", "]")) %>% 
+                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
                         rename(`Precursor Charge` = Charge) %>%
                         add_column(`Explicit Retention Time` = NA) %>%
                         add_column(`Explicit Retention Time Window` = NA) %>%
