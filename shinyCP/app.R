@@ -314,7 +314,7 @@ server = function(input, output, session) {
                                 `12C` >= 14 & `12C` < 18 ~ "MCCPs",
                                 `12C` >= 18 ~ "LCCPs")) %>%
                         select(`Molecule List Name`, `Molecule Name`, `Molecular Formula`, `Precursor Adduct`, 
-                               `Precursor Charge`, `Explicit Retention Time`, `Explicit Retention Time Window`)
+                               `Precursor Charge`, `Explicit Retention Time`, `Explicit Retention Time Window`, Note)
                 
                 
                 
