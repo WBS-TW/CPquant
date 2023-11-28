@@ -40,7 +40,7 @@ __Charge__: The charge of the ion.
   
 __Fragment__: The fragment and isotopic type of the ion species.  
   
-__Frag_MonoIso_Formula__: the chemical formula of the adduct/fragment ion.  
+__Adduct_Formula__: the chemical formula of the adduct/fragment ion.  
   
 __Isotopologue__: the isotopologue in relation to the monoisotopic ion.  
   

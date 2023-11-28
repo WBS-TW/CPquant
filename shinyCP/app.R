@@ -1,6 +1,6 @@
 # TODO
 # New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold
-
+# Rename columns according to Fernandes et al. 2023
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 # ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
@@ -33,14 +33,14 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("Cmin", "C atoms min (<=30)", value = 9, min = 3, max = 30),
-                                        shiny::numericInput("Cmax", "C atoms max (<=30)", value = 30, min = 4, max = 30),
+                                        shiny::numericInput("Cmin", "C atoms min (<=40)", value = 9, min = 3, max = 40),
+                                        shiny::numericInput("Cmax", "C atoms max (<=40)", value = 30, min = 4, max = 40),
                                         shiny::numericInput("Clmin", "Cl atoms min (<=15))", value = 3, min = 1, max = 15),
                                         shiny::numericInput("Clmax", "Cl atoms max (<=15)", value = 15, min = 1, max = 15),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
                                                 choices = c("[CP-Cl]-", 
-                                                            "[CP-H]-", 
+                                                            "[CP-H]-", # This is equivalent to [CP]
                                                             "[CP-HCl]-", 
                                                             #"[CP-Cl-HCl]-", #Needs to verify that regex extraction in getAdduct can get these ions before adding these
                                                             #"[CP-2Cl-HCl]-", 
@@ -69,7 +69,7 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Interfering ions",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("MSresolution", "MS Resolution", value = 60000, min = 100, max = 3000000),
+                                        shiny::numericInput("MSresolution", "MS Resolution", value = 60000, min = 1000, max = 3000000),
                                         shiny::actionButton("go2", "Calculate", width = "100%"),
                                         width = 2
                                         ),
@@ -208,9 +208,9 @@ server = function(input, output, session) {
                                                   '<br>',
                                                   "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
                                                   '<br>',
-                                                  "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  "Ion Formula:", CP_allions_compl2$Adduct_Formula,
                                                   '<br>',
-                                                  "Fragment isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                  "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
                                                                       "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`))
                                 )
                         %>% 
@@ -232,9 +232,9 @@ server = function(input, output, session) {
                                                   '<br>',
                                                   "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
                                                   '<br>',
-                                                  "Ion Formula:", CP_allions_compl2$Frag_MonoIso_Formula,
+                                                  "Ion Formula:", CP_allions_compl2$Adduct_Formula,
                                                   '<br>',
-                                                  "Fragment isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                  "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
                                                                                "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`),
                                                   '<br>',
                                                   "m/z:", CP_allions_compl2$`m/z`,

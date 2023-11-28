@@ -79,7 +79,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`)) %>%
                         mutate(Parent_Formula = Parent) %>%
                         mutate(Cl_perc = Cl_perc) %>%
-                        mutate(Frag_MonoIso_Formula =  Formula) %>%
+                        mutate(Adduct_Formula =  Formula) %>%
                         mutate(Charge = Charge) %>%
                         mutate(Isotopologue = case_when(
                                 `13C` + `37Cl`*2 == 0 ~ "",
@@ -105,7 +105,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                                 `13C` + `37Cl`*2 == 20 ~ "+20")) %>%
                         mutate(Fragment = paste0(adduct_ions, " ", Isotopologue)) %>%
                         rename(Rel_ab = abundance) %>%
-                        select(Parent_Formula, Cl_perc, Charge, Fragment, Frag_MonoIso_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+                        select(Parent_Formula, Cl_perc, Charge, Fragment, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
                 data_ls[[j]] <- dat
         }
         
