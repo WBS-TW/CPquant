@@ -327,7 +327,7 @@ server = function(input, output, session) {
                                                      scrollX = 500,
                                                      deferRender = TRUE,
                                                      scroller = TRUE,
-                                                     buttons = list(list(extend = "excel", title = "Transition List",
+                                                     buttons = list(list(extend = "excel", filename = "Transition List", title = NULL,
                                                                          exportOptions = list(
                                                                                  modifier = list(page = "all")
                                                                          )),
