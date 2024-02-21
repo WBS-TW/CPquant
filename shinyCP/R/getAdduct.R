@@ -2,6 +2,7 @@
 
 getAdduct <- function(adduct_ions, C, Cl, threshold) {
         
+        # Regex to extract strings
         ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # Using lookbehind assertion to extract ion mode
         fragment_ions <- str_extract(adduct_ions, "(?<=.{3}).+?(?=\\])") # extract after the 2nd character and before ]
         group <- str_extract(adduct_ions, "[^\\[].{1}") # Using positive lookbehind for [)
@@ -131,7 +132,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         data <- data %>%
                 filter(Cl > 0)
         
-        # All ion formulas
+        # Create empty list for all ion formulas
         CP_allions <- list()
         data_ls <- list()
         

@@ -49,3 +49,12 @@ CP_allions_skyline <- as_tibble(CP_allions_glob) %>%
 
 #----END---Test params for Skyline-----END--------- 
 
+test <- dat |> 
+        mutate(`Molecule List Name` = case_when(str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
+                                      str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`)))
+
+dat2 <- 
+
+
+
+

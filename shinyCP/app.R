@@ -1,10 +1,12 @@
 # TODO
 # New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold
 # Rename columns according to Fernandes et al. 2023
+# Add a `Precursor m/z` column but needs to be calculated using the getAdduct() function since getSkyline gives the monoisotopic and not adduct m/z
+
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 # ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
-# use isowrap instead to get more accurate profile isotopic fine structure
+# use isowrap instead to get more accurate envelope profile isotopic fine structure
 # Add BCP and BCO: https://pubs.acs.org/doi/10.1021/acs.est.2c03576
 
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
@@ -33,21 +35,22 @@ ui <- shiny::navbarPage(
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
-                                        shiny::numericInput("Cmin", "C atoms min (<=40)", value = 9, min = 3, max = 40),
-                                        shiny::numericInput("Cmax", "C atoms max (<=40)", value = 30, min = 4, max = 40),
-                                        shiny::numericInput("Clmin", "Cl atoms min (<=15))", value = 3, min = 1, max = 15),
-                                        shiny::numericInput("Clmax", "Cl atoms max (<=15)", value = 15, min = 1, max = 15),
+                                        shiny::numericInput("Cmin", "C atoms min (allowed 3-40)", value = 9, min = 3, max = 40),
+                                        shiny::numericInput("Cmax", "C atoms max (allowed 4-40)", value = 30, min = 4, max = 40),
+                                        shiny::numericInput("Clmin", "Cl atoms min (allowed 1-15))", value = 3, min = 1, max = 15),
+                                        shiny::numericInput("Clmax", "Cl atoms max (allowed 1-15)", value = 15, min = 1, max = 15),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
                                                 choices = c("[CP-Cl]-", 
-                                                            "[CP-H]-", # This is equivalent to [CP]
+                                                            "[CP-H]-",
                                                             "[CP-HCl]-", 
                                                             #"[CP-Cl-HCl]-", #Needs to verify that regex extraction in getAdduct can get these ions before adding these
                                                             #"[CP-2Cl-HCl]-", 
                                                             "[CP+Cl]-", 
                                                             "[CO-Cl]-", 
                                                             "[CO-HCl]-", 
-                                                            "[CO-H]-"
+                                                            "[CO-H]-",
+                                                            "[CO+Cl]-"
                                                             #"[CP-Cl-HCl]+", 
                                                             #"[CP-Cl-2HCl]+", 
                                                             #"[CP-Cl-3HCl]+", 
@@ -58,7 +61,7 @@ ui <- shiny::navbarPage(
                                                 selectize = TRUE,
                                                 width = NULL,
                                                 size = NULL),
-                                        shiny::numericInput("threshold", "Isotope rel ab threshold (%)", value = 5, min = 0, max = 99),
+                                        shiny::numericInput("threshold", "Isotope rel ab threshold (in %)", value = 5, min = 0, max = 99),
                                         shiny::actionButton("go1", "Submit", width = "100%"),
                                         width = 3),
                                 shiny::mainPanel(
@@ -86,8 +89,7 @@ ui <- shiny::navbarPage(
                                 shiny::sidebarPanel(
                                         #shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
                                         shiny::actionButton("go3", "Transition List", width = "100%"),
-                                        shiny::checkboxInput("checkMonoIso", "NOT WRK YET Always Include MonoIso", FALSE),
-                                        shiny::checkboxInput("checkSomething", "NOT WRK YET", FALSE),
+                                        #shiny::checkboxInput("checkMonoIso", "NOT WRK YET Always Include MonoIso", FALSE),
                                         width = 4
                                 ),
                                 shiny::mainPanel(
@@ -284,7 +286,7 @@ server = function(input, output, session) {
                 
                 Adducts <- as.character(selectedAdducts())
                 
-                # function to get adducts or fragments
+                # function to get Skyline adducts or fragments
                 CP_allions <- list()
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
@@ -297,7 +299,8 @@ server = function(input, output, session) {
         shiny::observeEvent(input$go3, {
                 
                 CP_allions_skyline <- CP_allions_skyline() %>%
-                        mutate(`Molecule List Name` = paste0("C", `12C`)) %>%
+                        mutate(`Molecule List Name` = case_when(str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
+                                                                str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
                         rename(`Molecule Name` = Parent_Formula) %>%
                         mutate(`Molecular Formula` = case_when(
                                 `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
@@ -309,13 +312,23 @@ server = function(input, output, session) {
                         add_column(`Explicit Retention Time` = NA) %>%
                         add_column(`Explicit Retention Time Window` = NA) %>%
                         mutate(Note = case_when(
-                                `12C` < 10 ~ "vSCCP",
-                                `12C` >= 10 & `12C` < 14 ~ "SCCPs",
-                                `12C` >= 14 & `12C` < 18 ~ "MCCPs",
-                                `12C` >= 18 ~ "LCCPs")) %>%
-                        select(`Molecule List Name`, `Molecule Name`, `Molecular Formula`, `Precursor Adduct`, 
-                               `Precursor Charge`, `Explicit Retention Time`, `Explicit Retention Time Window`, Note)
-                
+                                `12C` < 10 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
+                                `12C` < 10 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
+                                `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
+                                `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
+                                `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
+                                `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
+                                `12C` >= 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
+                                `12C` >= 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
+                        select(`Molecule List Name`, 
+                               `Molecule Name`, 
+                               #Fragment, 
+                               `Molecular Formula`, 
+                               `Precursor Adduct`, 
+                               `Precursor Charge`, 
+                               `Explicit Retention Time`, 
+                               `Explicit Retention Time Window`, 
+                               Note)
                 
                 
                 
@@ -341,6 +354,9 @@ server = function(input, output, session) {
                                       rownames = FALSE)
                 })
         })
+        
+        
+        
         # go3 end
         
 #----Outputs_End
