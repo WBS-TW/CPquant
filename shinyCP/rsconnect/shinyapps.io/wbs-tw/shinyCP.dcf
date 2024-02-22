@@ -5,7 +5,7 @@ account: wbs-tw
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 6270627
-bundleId: 8280279
+bundleId: 8280728
 url: https://wbs-tw.shinyapps.io/shinyCP/
 asMultiple: FALSE
 asStatic: FALSE
