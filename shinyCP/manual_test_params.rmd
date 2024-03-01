@@ -1,0 +1,96 @@
+---
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+#---START----Test params for Skyline----START---------- 
+
+```{r}
+
+data("isotopes")
+source("./R/getAdduct.R")
+source("./R/getSkyline.R")
+
+Cmin <- 10
+Cmax  <- 11
+Clmin <- 7
+Clmax <- 8
+Adduct <- "[CP+Cl]-"
+threshold <- 50
+MSresolution <- 60000
+
+C <- as.integer(Cmin:Cmax)
+Cl <- as.integer(Clmin:Clmax)
+selectedAdducts <- Adduct
+Adducts <- as.character(selectedAdducts)
+
+CP_allions <- list()
+for (i in seq_along(Adducts)) {
+        input <- getAdduct(adduct_ions = Adducts[i], C = C, Cl = Cl, threshold = threshold)
+        CP_allions <- rbind(CP_allions, input)
+        }
+
+```
+
+
+Skyline tab
+```{r}
+
+
+CP_allions_skyline <- function(selAdducts){
+        Adducts <- as.character()
+        CP_allions <- list()
+                for (i in seq_along(Adducts)) {
+                        progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
+                        input <- getSkyline(adduct_ions = Adducts[i], C = C, Cl = Cl, threshold = threshold)
+                        CP_allions <- rbind(CP_allions, input)
+                }
+        return(CP_allions)
+}
+
+CP_allions_skyline <- CP_allions_skyline()
+
+ CP_allions_skyline <- CP_allions_skyline %>%
+                        mutate(`Molecule List Name` = case_when(str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
+                                                                str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
+                        rename(`Molecule Name` = Parent_Formula) %>%
+                        mutate(`Molecular Formula` = case_when(
+                                `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
+                                `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
+                        )) %>%
+                        mutate(`Precursor Adduct` = str_replace(Fragment, "\\].*", "]")) %>% 
+                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
+                        rename(`Precursor Charge` = Charge) %>%
+                        add_column(`Explicit Retention Time` = NA) %>%
+                        add_column(`Explicit Retention Time Window` = NA) %>%
+                        mutate(Note = case_when(
+                                `12C` < 10 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
+                                `12C` < 10 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
+                                `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
+                                `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
+                                `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
+                                `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
+                                `12C` >= 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
+                                `12C` >= 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
+                        select(`Molecule List Name`, 
+                               `Molecule Name`, 
+                               #Fragment, 
+                               `Molecular Formula`, 
+                               `Precursor Adduct`, 
+                               `Precursor Charge`, 
+                               `Explicit Retention Time`, 
+                               `Explicit Retention Time Window`, 
+                               Note)
+                
+
+
+```
+
+
+
+
+
+
+       
+C
