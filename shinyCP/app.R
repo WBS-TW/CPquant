@@ -2,6 +2,7 @@
 # New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold
 # Rename columns according to Fernandes et al. 2023
 # Add a `Precursor m/z` column but needs to be calculated using the getAdduct() function since getSkyline gives the monoisotopic and not adduct m/z
+# Add [M+Br]-
 
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 # ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
@@ -50,7 +51,8 @@ ui <- shiny::navbarPage(
                                                             "[CO-Cl]-", 
                                                             "[CO-HCl]-", 
                                                             "[CO-H]-",
-                                                            "[CO+Cl]-"
+                                                            "[CO+Cl]-",
+                                                            "[CP+Br]-"
                                                             #"[CP-Cl-HCl]+", 
                                                             #"[CP-Cl-2HCl]+", 
                                                             #"[CP-Cl-3HCl]+", 
@@ -89,7 +91,7 @@ ui <- shiny::navbarPage(
                                 shiny::sidebarPanel(
                                         #shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
                                         shiny::actionButton("go3", "Transition List", width = "100%"),
-                                        #shiny::checkboxInput("checkMonoIso", "NOT WRK YET Always Include MonoIso", FALSE),
+                                        shiny::checkboxInput("MonoisoAsQuant", "Mark monoisotopic peak as quant ion", FALSE),
                                         width = 4
                                 ),
                                 shiny::mainPanel(
