@@ -51,8 +51,8 @@ ui <- shiny::navbarPage(
                                                             "[CO-Cl]-", 
                                                             "[CO-HCl]-", 
                                                             "[CO-H]-",
-                                                            "[CO+Cl]-",
-                                                            "[CP+Br]-"
+                                                            "[CO+Cl]-"
+                                                            #"[CP+Br]-"
                                                             #"[CP-Cl-HCl]+", 
                                                             #"[CP-Cl-2HCl]+", 
                                                             #"[CP-Cl-3HCl]+", 
