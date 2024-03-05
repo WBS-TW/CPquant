@@ -126,6 +126,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
                         select(Parent, Cl_perc, Charge, Fragment, Formula, C, H, Cl)
+
         } else if (fragment_ions == "+Br") { # Generate fragments M+Br for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>%
