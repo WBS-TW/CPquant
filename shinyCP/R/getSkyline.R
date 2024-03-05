@@ -1,4 +1,6 @@
 
+# Check how to write ion formulas and adduct descriptions: 
+# https://skyline.ms/_webdav/home/software/Skyline/@files/tutorials/Skyline%20Small%20Molecule%20Targets.pdf
 
 getSkyline <- function(adduct_ions, C, Cl, threshold) {
         
@@ -77,6 +79,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                                                         plotit = FALSE, 
                                                         charge = Charge)}
         
+        # This is for [M+Br]- adducts
         if (fragment_ions == "+Br") { 
                 for (j in seq_along(data$Formula)) {
                         Formula <- data$Formula[j]
@@ -120,7 +123,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                                 select(Parent_Formula, Cl_perc, Charge, Fragment, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, `79Br`, `81Br`)
                         data_ls[[j]] <- dat
                 }
-        }else {
+        }else { # This is for all the other adducts 
                 for (j in seq_along(data$Formula)) {
                         Formula <- data$Formula[j]
                         Parent <- data$Parent[j]

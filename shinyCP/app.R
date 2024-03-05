@@ -313,15 +313,18 @@ server = function(input, output, session) {
                         rename(`Precursor Charge` = Charge) %>%
                         add_column(`Explicit Retention Time` = NA) %>%
                         add_column(`Explicit Retention Time Window` = NA) %>%
-                        mutate(Note = case_when(
-                                `12C` < 10 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
-                                `12C` < 10 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
-                                `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
-                                `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
-                                `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
-                                `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
-                                `12C` >= 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
-                                `12C` >= 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
+                        group_by(`Molecule Name`) |> 
+                        mutate(Note = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
+                        ungroup() |> 
+                        # mutate(Note = case_when(
+                        #         `12C` < 10 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
+                        #         `12C` < 10 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
+                        #         `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
+                        #         `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
+                        #         `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
+                        #         `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
+                        #         `12C` >= 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
+                        #         `12C` >= 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
                         select(`Molecule List Name`, 
                                `Molecule Name`, 
                                #Fragment, 
