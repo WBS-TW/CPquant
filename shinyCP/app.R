@@ -96,18 +96,11 @@ ui <- shiny::navbarPage(
                                 shiny::sidebarPanel(
                                         #shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
                                         shiny::actionButton("go3", "Transition List", width = "100%"),
-<<<<<<< Updated upstream
                                         shiny::radioButtons("QuantIon", label = "Use as Quant Ion", choices = c("Most intense")),
                                         #shiny::radioButtons("skylineoutput", label = "Output table", choices = c("mz", "IonFormula")),
                                         shiny::radioButtons("skylineoutput", label = "Output table", choices = c("mz")),
                                         width = 4
                                 ),
-=======
-                                        shiny::checkboxInput("MonoisoAsQuant", "Mark monoisotopic peak as quant ion", FALSE),
-                                        shiny::radioButtons("skylineoutput", "Output as ion formula or m/z values?",
-                                                            choices = c("skylineformula", "skylinemasses")),
-                                        width = 4),
->>>>>>> Stashed changes
                                 shiny::mainPanel(
                                         DT::dataTableOutput("Table3", width = "100%")
                                         
@@ -166,12 +159,7 @@ server = function(input, output, session) {
                 return(CP_allions)
         })
         
-<<<<<<< Updated upstream
 ### go1: Calculate the isotopes from initial settings tab ###
-=======
-
-#### go1: Calculate the isotopes from initial settings tab ###
->>>>>>> Stashed changes
         shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                         # Show data
@@ -198,12 +186,8 @@ server = function(input, output, session) {
         # go1 end
         
         
-<<<<<<< Updated upstream
         
 ### go2: Calculates the interfering ions tab ###
-=======
-#### go2: Calculates the interfering ions tab ###
->>>>>>> Stashed changes
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -298,19 +282,11 @@ server = function(input, output, session) {
         })
         # go2 end
         
-<<<<<<< Updated upstream
 ### go3: Skyline tab ###
         
         CP_allions_skyline <- eventReactive(input$go3, {
                 
                 
-=======
-#### go3: Skyline tab #####
-        
-        CP_allions_skyline <- eventReactive(input$go3, {
-                # output ion formula if radiobutton is skylineformula
-                if(input$skylineoutput == "skylineformula"){
->>>>>>> Stashed changes
                 # Create a Progress bar object
                 progress <- shiny::Progress$new()
                 
@@ -328,41 +304,10 @@ server = function(input, output, session) {
                         CP_allions_sky <- rbind(CP_allions, input)
                         
                 }
-<<<<<<< Updated upstream
                 return(CP_allions_sky)
         })
         shiny::observeEvent(input$go3, {
                 if(input$skylineoutput == "IonFormula"){
-=======
-                return(CP_allions)
-                # output m/z if radiobutton is skylinemasses
-                }else if(input$skylineoutput == "skylinemasses"){
-                        
-                        # Create a Progress bar object
-                        progress <- shiny::Progress$new()
-                        
-                        # Make sure it closes when we exit this reactive, even if there's an error
-                        on.exit(progress$close())
-                        progress$set(message = "Calculating", value = 0)
-                        
-                        Adducts <- as.character(selectedAdducts())
-                        
-                        # function to get adducts or fragments
-                        CP_allions <- list()
-                        for (i in seq_along(Adducts)) {
-                                progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-                                input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
-                                CP_allions <- rbind(CP_allions, input)
-                                
-                        }
-                        return(CP_allions)
-                }
-                
-        })
-        shiny::observeEvent(input$go3, {
-                
-                if(input$skylineoutput == "skylineformula"){
->>>>>>> Stashed changes
                 CP_allions_skyline <- CP_allions_skyline() %>%
                         mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
                                                                 str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`))) %>%
@@ -389,6 +334,8 @@ server = function(input, output, session) {
                                `Explicit Retention Time Window`, 
                                Note)
                 
+                
+                
                 output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
                         # Show data
                         DT::datatable(CP_allions_skyline, 
@@ -410,7 +357,6 @@ server = function(input, output, session) {
                                                      fixedColumns = TRUE), 
                                       rownames = FALSE)
                 })
-<<<<<<< Updated upstream
                 }else if(input$skylineoutput == "mz"){
                         
                         CP_allions_skyline2 <- CP_allions_glob() %>%
@@ -440,31 +386,16 @@ server = function(input, output, session) {
                         output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                                 # Show data
                                 DT::datatable(CP_allions_skyline2, 
-=======
-                
-                }else if(input$skylineoutput == "skylinemasses"){
-                        output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
-                                # Show data
-                                DT::datatable(CP_allions_glob(), 
->>>>>>> Stashed changes
                                               filter = "top", extensions = c("Buttons", "Scroller"),
                                               options = list(scrollY = 650,
                                                              scrollX = 500,
                                                              deferRender = TRUE,
                                                              scroller = TRUE,
-<<<<<<< Updated upstream
                                                              buttons = list(list(extend = "excel", filename = "Skyline_transition_list", title = NULL,
                                                                                  exportOptions = list(
                                                                                          modifier = list(page = "all")
                                                                                  )),
                                                                             list(extend = "csv", filename = "Skyline_transition_list", title = NULL,
-=======
-                                                             buttons = list(list(extend = "excel", title = NULL,
-                                                                                 exportOptions = list(
-                                                                                         modifier = list(page = "all")
-                                                                                 )),
-                                                                            list(extend = "csv", title = NULL,
->>>>>>> Stashed changes
                                                                                  exportOptions = list(
                                                                                          modifier = list(page = "all")
                                                                                  )),
@@ -473,16 +404,12 @@ server = function(input, output, session) {
                                                              fixedColumns = TRUE), 
                                               rownames = FALSE)
                         })
-<<<<<<< Updated upstream
                 }
                         
                 
-=======
-                        
-                }
-        
->>>>>>> Stashed changes
         })
+        
+        
         
         # go3 end
         
