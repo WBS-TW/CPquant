@@ -1,16 +1,21 @@
 # TODO
-# New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold
+# New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold?
 # Rename columns according to Fernandes et al. 2023
 # Add a `Precursor m/z` column but needs to be calculated using the getAdduct() function since getSkyline gives the monoisotopic and not adduct m/z
-# Add [M+Br]-
 
 # New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
-# ...user should first export to excel and then filter only those used for quan/qual. Need a new column to indicate this?
 
 # use isowrap instead to get more accurate envelope profile isotopic fine structure
 # Add BCP and BCO: https://pubs.acs.org/doi/10.1021/acs.est.2c03576
 
+# TO FIX
+# # CP_allions and CP_allions_skyline gives different number of rows
+
+
+# Information:
 # Reactive log: https://shiny.rstudio.com/articles/debugging.html
+
+# Skyline adducts: # https://skyline.ms/wiki/home/software/Skyline/page.view?name=adduct_descriptions
 
 library(shiny)
 library(shinythemes)
@@ -63,7 +68,7 @@ ui <- shiny::navbarPage(
                                                     selectize = TRUE,
                                                     width = NULL,
                                                     size = NULL),
-                                        shiny::numericInput("threshold", "Isotope rel ab threshold (in %)", value = 5, min = 0, max = 99),
+                                        shiny::numericInput("threshold", "Isotope rel ab threshold (5-99%)", value = 5, min = 0, max = 99),
                                         shiny::actionButton("go1", "Submit", width = "100%"),
                                         width = 3),
                                 shiny::mainPanel(
@@ -91,7 +96,9 @@ ui <- shiny::navbarPage(
                                 shiny::sidebarPanel(
                                         #shiny::numericInput("MSresolution2", "MS Resolution", value = 60000, min = 100, max = 3000000),
                                         shiny::actionButton("go3", "Transition List", width = "100%"),
-                                        shiny::checkboxInput("MonoisoAsQuant", "Mark monoisotopic peak as quant ion", FALSE),
+                                        shiny::radioButtons("QuantIon", label = "Use as Quant Ion", choices = c("Most intense")),
+                                        #shiny::radioButtons("skylineoutput", label = "Output table", choices = c("mz", "IonFormula")),
+                                        shiny::radioButtons("skylineoutput", label = "Output table", choices = c("mz")),
                                         width = 4
                                 ),
                                 shiny::mainPanel(
@@ -152,7 +159,7 @@ server = function(input, output, session) {
                 return(CP_allions)
         })
         
-        # go1: Calculate the isotopes from initial settings tab
+### go1: Calculate the isotopes from initial settings tab ###
         shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                         # Show data
@@ -180,7 +187,7 @@ server = function(input, output, session) {
         
         
         
-        # go2: Calculates the interfering ions tab
+### go2: Calculates the interfering ions tab ###
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -210,7 +217,7 @@ server = function(input, output, session) {
                                 hoverinfo = "text",
                                 hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
-                                                  "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
+                                                  "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
                                                   '<br>',
                                                   "Ion Formula:", CP_allions_compl2$Adduct_Formula,
                                                   '<br>',
@@ -230,11 +237,11 @@ server = function(input, output, session) {
                                 y = ~Rel_ab,
                                 type = "bar",
                                 color = ~interference,
-                                #text = ~Fragment,
+                                #text = ~Adduct,
                                 hoverinfo = "text",
                                 hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
                                                   '<br>',
-                                                  "Adduct/Fragment ion:", CP_allions_compl2$Fragment,
+                                                  "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
                                                   '<br>',
                                                   "Ion Formula:", CP_allions_compl2$Adduct_Formula,
                                                   '<br>',
@@ -275,9 +282,10 @@ server = function(input, output, session) {
         })
         # go2 end
         
-        # go3: Skyline tab
+### go3: Skyline tab ###
         
         CP_allions_skyline <- eventReactive(input$go3, {
+                
                 
                 # Create a Progress bar object
                 progress <- shiny::Progress$new()
@@ -289,48 +297,48 @@ server = function(input, output, session) {
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get Skyline adducts or fragments
-                CP_allions <- list()
+                CP_allions_sky <- list()
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
-                        CP_allions <- rbind(CP_allions, input)
+                        CP_allions_sky <- rbind(CP_allions, input)
                         
                 }
-                return(CP_allions)
+                return(CP_allions_sky)
         })
         shiny::observeEvent(input$go3, {
-                
+                if(input$skylineoutput == "IonFormula"){
                 CP_allions_skyline <- CP_allions_skyline() %>%
-                        mutate(`Molecule List Name` = case_when(str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
-                                                                str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
+                        mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
+                                                                str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
                         rename(`Molecule Name` = Parent_Formula) %>%
                         mutate(`Molecular Formula` = case_when(
                                 `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
                                 `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
                         )) %>%
-                        mutate(`Precursor Adduct` = str_replace(Fragment, "\\].*", "]")) %>% 
-                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
+                        # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>%
+                        # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
+                        rename(Note = Adduct) %>%
                         rename(`Precursor Charge` = Charge) %>%
                         add_column(`Explicit Retention Time` = NA) %>%
                         add_column(`Explicit Retention Time Window` = NA) %>%
                         group_by(`Molecule Name`) |> 
-                        mutate(Note = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
+                        mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
                         ungroup() |> 
                         # mutate(Note = case_when(
-                        #         `12C` < 10 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
-                        #         `12C` < 10 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
-                        #         `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
-                        #         `12C` >= 10 & `12C` < 14 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
-                        #         `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
-                        #         `12C` >= 14 & `12C` < 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
-                        #         `12C` >= 18 & str_detect(Fragment, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
-                        #         `12C` >= 18 & str_detect(Fragment, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
+                        #         `12C` < 10 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
+                        #         `12C` < 10 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
+                        #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
+                        #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
+                        #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
+                        #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
+                        #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
+                        #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
                         select(`Molecule List Name`, 
                                `Molecule Name`, 
-                               #Fragment, 
                                `Molecular Formula`, 
-                               `Precursor Adduct`, 
-                               `Precursor Charge`, 
+                               `Precursor Charge`,
+                               `Label Type`,
                                `Explicit Retention Time`, 
                                `Explicit Retention Time Window`, 
                                Note)
@@ -345,11 +353,11 @@ server = function(input, output, session) {
                                                      scrollX = 500,
                                                      deferRender = TRUE,
                                                      scroller = TRUE,
-                                                     buttons = list(list(extend = "excel", filename = "Transition List", title = NULL,
+                                                     buttons = list(list(extend = "excel", filename = "Skyline_transition_list", title = NULL,
                                                                          exportOptions = list(
                                                                                  modifier = list(page = "all")
                                                                          )),
-                                                                    list(extend = "csv", title = "Transition List",
+                                                                    list(extend = "csv", filename = "Skyline_transition_list", title = NULL,
                                                                          exportOptions = list(
                                                                                  modifier = list(page = "all")
                                                                          )),
@@ -358,6 +366,65 @@ server = function(input, output, session) {
                                                      fixedColumns = TRUE), 
                                       rownames = FALSE)
                 })
+                }else if(input$skylineoutput == "mz"){
+                        
+                        CP_allions_skyline2 <- CP_allions_glob() %>%
+                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
+                                                                        str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
+                                rename(`Molecule Name` = Parent_Formula) %>%
+                                mutate(`Precursor m/z` = `m/z`) %>% 
+                                # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>% 
+                                # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
+                                rename(Note = Adduct) %>%
+                                rename(`Precursor Charge` = Charge) %>%
+                                add_column(`Explicit Retention Time` = NA) %>%
+                                add_column(`Explicit Retention Time Window` = NA) %>%
+                                group_by(`Molecule Name`) |> 
+                                mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
+                                ungroup() %>%
+                                # mutate(Note = case_when(
+                                #         `12C` < 10 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
+                                #         `12C` < 10 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
+                                #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
+                                #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
+                                #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
+                                #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
+                                #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
+                                #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
+                                select(`Molecule List Name`, 
+                                       `Molecule Name`,
+                                       `Precursor Charge`, 
+                                       `Label Type`,
+                                       `Precursor m/z` = `m/z`,
+                                       `Explicit Retention Time`, 
+                                       `Explicit Retention Time Window`, 
+                                       Note)
+                        
+                        
+                        output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
+                                # Show data
+                                DT::datatable(CP_allions_skyline2, 
+                                              filter = "top", extensions = c("Buttons", "Scroller"),
+                                              options = list(scrollY = 650,
+                                                             scrollX = 500,
+                                                             deferRender = TRUE,
+                                                             scroller = TRUE,
+                                                             buttons = list(list(extend = "excel", filename = "Skyline_transition_list", title = NULL,
+                                                                                 exportOptions = list(
+                                                                                         modifier = list(page = "all")
+                                                                                 )),
+                                                                            list(extend = "csv", filename = "Skyline_transition_list", title = NULL,
+                                                                                 exportOptions = list(
+                                                                                         modifier = list(page = "all")
+                                                                                 )),
+                                                                            list(extend = "colvis", targets = 0, visible = FALSE)),
+                                                             dom = "lBfrtip",
+                                                             fixedColumns = TRUE), 
+                                              rownames = FALSE)
+                        })
+                }
+                        
+                
         })
         
         
