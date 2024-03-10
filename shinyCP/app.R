@@ -36,7 +36,7 @@ source("./R/getSkyline.R")
 #--------------------------------UI function----------------------------------#
 
 ui <- shiny::navbarPage(
-        "Chlorinated paraffins/olefins ion explorer",
+        "PCA/PCO explorer",
         theme = shinythemes::shinytheme('spacelab'),
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
