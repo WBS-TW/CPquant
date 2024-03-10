@@ -20,7 +20,7 @@ __Cl atoms min__ and __Cl atoms max__: is the range of number of chlorine atoms 
   
 __Add adducts/fragments__: refers to the formula of adducts and/or fragments to generate from a set list of available options. Multiple selections are possible.  
   
-__[CP]__ and __[CO]__: refers to either chlorinated paraffins [CP] or chlorinated (mono)olefins [CO]. 
+__[PCA]__ and __[PCO]__: refers to either polychlorinated alkanes [PCA] or polychlorinated alkenes (mono olefins) [PCO]. 
   
 __[xx-yy]__ or __[xx-yy-zz]__: where _-yy_ refers to the adduct/fragment ions or _-yy-zz_ which are the consecutive loss fragments. Currently, a limited selection is available but more can be added upon request.  
   
@@ -72,7 +72,7 @@ __reslag & reslead (prev and next)__: the MS resolution needed to resolve previo
   
 ## Skyline tab  
 
-__TO BE ADDED__
+This will output a transition list for import in Skyline for integration and quantification.
   
   
 
