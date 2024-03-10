@@ -47,23 +47,23 @@ ui <- shiny::navbarPage(
                                         shiny::numericInput("Clmax", "Cl atoms max (allowed 1-15)", value = 15, min = 1, max = 15),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
-                                                    choices = c("[CP-Cl]-", 
-                                                                "[CP-H]-",
-                                                                "[CP-HCl]-", 
-                                                                #"[CP-Cl-HCl]-", #Needs to verify that regex extraction in getAdduct can get these ions before adding these
-                                                                #"[CP-2Cl-HCl]-", 
-                                                                "[CP+Cl]-", 
-                                                                "[CO-Cl]-", 
-                                                                "[CO-HCl]-", 
-                                                                "[CO-H]-",
-                                                                "[CO+Cl]-",
-                                                                "[CP+Br]-"
-                                                                #"[CP-Cl-HCl]+", 
-                                                                #"[CP-Cl-2HCl]+", 
-                                                                #"[CP-Cl-3HCl]+", 
-                                                                #"[CP-Cl-4HCl]+"),
+                                                    choices = c("[PCA-Cl]-", 
+                                                                "[PCA-H]-",
+                                                                "[PCA-HCl]-", 
+                                                                #"[PCA-Cl-HCl]-", #Needs to verify that regex extraction in getAdduct can get these ions before adding these
+                                                                #"[PCA-2Cl-HCl]-", 
+                                                                "[PCA+Cl]-", 
+                                                                "[PCO-Cl]-", 
+                                                                "[PCO-HCl]-", 
+                                                                "[PCO-H]-",
+                                                                "[PCO+Cl]-",
+                                                                "[PCA+Br]-"
+                                                                #"[PCA-Cl-HCl]+", 
+                                                                #"[PCA-Cl-2HCl]+", 
+                                                                #"[PCA-Cl-3HCl]+", 
+                                                                #"[PCA-Cl-4HCl]+"),
                                                     ),
-                                                    selected = "[CP-Cl]-",
+                                                    selected = "[PCA-Cl]-",
                                                     multiple = TRUE,
                                                     selectize = TRUE,
                                                     width = NULL,
@@ -309,8 +309,8 @@ server = function(input, output, session) {
         shiny::observeEvent(input$go3, {
                 if(input$skylineoutput == "IonFormula"){
                 CP_allions_skyline <- CP_allions_skyline() %>%
-                        mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
-                                                                str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
+                        mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
+                                                                str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`))) %>%
                         rename(`Molecule Name` = Parent_Formula) %>%
                         mutate(`Molecular Formula` = case_when(
                                 `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
@@ -325,15 +325,6 @@ server = function(input, output, session) {
                         group_by(`Molecule Name`) |> 
                         mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
                         ungroup() |> 
-                        # mutate(Note = case_when(
-                        #         `12C` < 10 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
-                        #         `12C` < 10 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
-                        #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
-                        #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
-                        #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
-                        #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
-                        #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
-                        #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
                         select(`Molecule List Name`, 
                                `Molecule Name`, 
                                `Molecular Formula`, 
@@ -369,8 +360,8 @@ server = function(input, output, session) {
                 }else if(input$skylineoutput == "mz"){
                         
                         CP_allions_skyline2 <- CP_allions_glob() %>%
-                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ paste0("CP-C", `12C`),
-                                                                        str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ paste0("CO-C", `12C`))) %>%
+                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
+                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`))) %>%
                                 rename(`Molecule Name` = Parent_Formula) %>%
                                 mutate(`Precursor m/z` = `m/z`) %>% 
                                 # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>% 
@@ -382,15 +373,6 @@ server = function(input, output, session) {
                                 group_by(`Molecule Name`) |> 
                                 mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
                                 ungroup() %>%
-                                # mutate(Note = case_when(
-                                #         `12C` < 10 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "vSCCP",
-                                #         `12C` < 10 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "vSCCO",
-                                #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "SCCPs",
-                                #         `12C` >= 10 & `12C` < 14 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "SCCOs",
-                                #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "MCCPs",
-                                #         `12C` >= 14 & `12C` < 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "MCCOs",
-                                #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CP(?=.)") == TRUE ~ "LCCPs",
-                                #         `12C` >= 18 & str_detect(Adduct, "(?<=.)CO(?=.)") == TRUE ~ "LCCOs")) %>%
                                 select(`Molecule List Name`, 
                                        `Molecule Name`,
                                        `Precursor Charge`, 

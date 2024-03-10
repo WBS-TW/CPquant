@@ -5,17 +5,17 @@
 getSkyline <- function(adduct_ions, C, Cl, threshold) {
         
         ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # Using lookbehind assertion to extract ion mode
-        fragment_ions <- str_extract(adduct_ions, "(?<=.{3}).+?(?=\\])") # extract after the 2nd character and before ]
-        group <- str_extract(adduct_ions, "[^\\[].{1}") # Using positive lookbehind for [)
+        fragment_ions <- str_extract(adduct_ions, "(?<=.{4}).+?(?=\\])") # extract after the 3rd character and before ]
+        group <- str_extract(adduct_ions, "[^\\[].{2}") # Using positive lookbehind for [)
         
-        if (group == "CP") {
+        if (group == "PCA") {
                 data <- crossing(C, Cl) %>% #set combinations of C and Cl
                         filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
                         filter(Cl < 15) %>% # limit chlorine atoms. CHECK WITH LCCPs!!
                         mutate(H = 2*C+2-Cl) %>% # add H atoms
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
                         select(Formula, C, H, Cl) # move Formula to first column
-        } else if (group == "CO") {
+        } else if (group == "PCO") {
                 data <- crossing(C, Cl) %>% #set combinations of C and Cl
                         filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
                         filter(Cl < 15) %>% # limit chlorine atoms. CHECK WITH LCCPs!!
@@ -23,7 +23,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
                         select(Formula, C, H, Cl) # move Formula to first column
         }  else {
-                print("Input not correct, only CP or CO is allowed")
+                print("Input not correct, only PCA or PCO is allowed")
         }
         
         # check chem_forms
@@ -44,8 +44,8 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
         if (fragment_ions == "+Br") {        
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl) %>%
                         mutate(Br = 1) |> 
@@ -54,8 +54,8 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
         } else {
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "CP" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "CO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
+                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
@@ -71,7 +71,7 @@ getSkyline <- function(adduct_ions, C, Cl, threshold) {
         data_ls <- list()
         
         
-        # function to get isotopic patterns for all CPs. Limit the threshold to 10%, neutral form. data("isotopes") needs to be loaded first
+        # function to get isotopic patterns for all PCAs. Limit the threshold to 10%, neutral form. data("isotopes") needs to be loaded first
         getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, 
                                                         chemforms = x, 
                                                         threshold = threshold, 

@@ -27,7 +27,7 @@ Cmin <- 10
 Cmax  <- 30
 Clmin <- 5
 Clmax <- 10
-Adduct <- "[CP+Cl]-"
+Adduct <- "[PCA+Cl]-"
 threshold <- 50
 MSresolution <- 60000
 
