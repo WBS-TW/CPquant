@@ -1,12 +1,12 @@
 # TODO
-# New tab Skyline: add checkbox to include monoisotopic formula even if it is not above threshold?
-# Rename columns according to Fernandes et al. 2023
-# Add a `Precursor m/z` column but needs to be calculated using the getAdduct() function since getSkyline gives the monoisotopic and not adduct m/z
-
-# New tab: Add a user input (csv) file to see if the chosen quantifier and qualifier ions have interference from other fragment ions... 
 
 # use isowrap instead to get more accurate envelope profile isotopic fine structure
-# Add BCP and BCO: https://pubs.acs.org/doi/10.1021/acs.est.2c03576
+# # Add other analogues such as:
+# carboxylates: C16HxCl4−7O2 (https://pubs.rsc.org/en/content/articlelanding/2023/em/d2em00494a)
+# BCP and BCO: https://pubs.acs.org/doi/10.1021/acs.est.2c03576
+# Sulfur PCAs: https://pubs.acs.org/doi/10.1021/acs.est.3c10056
+# CFAMES: https://pubs.acs.org/doi/10.1021/acs.analchem.2c02158
+
 
 # TO FIX
 # # CP_allions and CP_allions_skyline gives different number of rows
@@ -306,6 +306,7 @@ server = function(input, output, session) {
                 }
                 return(CP_allions_sky)
         })
+        # The IonFormula is not activated yet since not compatible with [M-Cl]- (adduct not available in skyline)
         shiny::observeEvent(input$go3, {
                 if(input$skylineoutput == "IonFormula"){
                 CP_allions_skyline <- CP_allions_skyline() %>%
@@ -316,8 +317,8 @@ server = function(input, output, session) {
                                 `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
                                 `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
                         )) %>%
-                        # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>%
-                        # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
+                        mutate(`Precursor Adduct` = str_replace(Adduct, "\\].*", "]")) %>%
+                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
                         rename(Note = Adduct) %>%
                         rename(`Precursor Charge` = Charge) %>%
                         add_column(`Explicit Retention Time` = NA) %>%
@@ -328,6 +329,7 @@ server = function(input, output, session) {
                         select(`Molecule List Name`, 
                                `Molecule Name`, 
                                `Molecular Formula`, 
+                               `Precursor Adduct`,
                                `Precursor Charge`,
                                `Label Type`,
                                `Explicit Retention Time`, 
