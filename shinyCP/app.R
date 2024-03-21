@@ -45,6 +45,9 @@ ui <- shiny::navbarPage(
                                         shiny::numericInput("Cmax", "C atoms max (allowed 4-40)", value = 30, min = 4, max = 40),
                                         shiny::numericInput("Clmin", "Cl atoms min (allowed 1-15))", value = 3, min = 1, max = 15),
                                         shiny::numericInput("Clmax", "Cl atoms max (allowed 1-15)", value = 15, min = 1, max = 15),
+                                        shiny::numericInput("Brmin", "Br atoms min (allowed 1-15))", value = 1, min = 1, max = 15),
+                                        shiny::numericInput("Brmax", "Br atoms max (allowed 1-15)", value = 4, min = 1, max = 15),
+                                        #shiny::uiOutput("BrCl_slider"),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
                                                     choices = c("[PCA-Cl]-", 
@@ -57,7 +60,8 @@ ui <- shiny::navbarPage(
                                                                 "[PCO-HCl]-", 
                                                                 "[PCO-H]-",
                                                                 "[PCO+Cl]-",
-                                                                "[PCA+Br]-"
+                                                                "[PCA+Br]-",
+                                                                "[BCA+Cl]-"
                                                                 #"[PCA-Cl-HCl]+", 
                                                                 #"[PCA-Cl-2HCl]+", 
                                                                 #"[PCA-Cl-3HCl]+", 
@@ -128,12 +132,26 @@ ui <- shiny::navbarPage(
 server = function(input, output, session) {
         
         # Set reactive values from user input
+        selectedAdducts <- eventReactive(input$go1, {as.character(input$Adducts)})
         C <- eventReactive(input$go1, {as.integer(input$Cmin:input$Cmax)})
         Cl <- eventReactive(input$go1, {as.integer(input$Clmin:input$Clmax)})
+        Clmin <- eventReactive(input$go1, {as.integer(input$Clmin)})
+        Clmax <- eventReactive(input$go1, {as.integer(input$Clmax)})
+        Br <- eventReactive(input$go1, {as.integer(input$Brmin:input$Brmax)})
+        Brmin <- eventReactive(input$go1, {as.integer(input$Brmin)})
+        Brmax <- eventReactive(input$go1, {as.integer(input$Brmax)})
         threshold <- eventReactive(input$go1, {as.integer(input$threshold)})
-        selectedAdducts <- eventReactive(input$go1, {as.character(input$Adducts)})
         MSresolution <- eventReactive(input$go2, {as.integer(input$MSresolution)})
         
+        #----Slider
+        # output$BrCl_slider <- renderUI({
+        #         sliderInput("slider", 
+        #                      "Select Range of Cl and Br:",
+        #                      min = Clmin(),
+        #                      max = Clmax(),
+        #                      value = c(min, max)
+        #                      )
+        # })
         
         #----Outputs_Start
         
@@ -152,14 +170,18 @@ server = function(input, output, session) {
                 CP_allions <- list()
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-                        input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
+                        if(Adducts == "[BCA+Cl]-"){
+                                input <- getAdduct_BrCl(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), 
+                                                        Br = Br(), Brmax = Brmax(), threshold = threshold())
+                        } else {
+                                input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
+                        }
                         CP_allions <- rbind(CP_allions, input)
-                        
                 }
                 return(CP_allions)
         })
         
-### go1: Calculate the isotopes from initial settings tab ###
+        ### go1: Calculate the isotopes from initial settings tab ###
         shiny::observeEvent(input$go1, {
                 output$Table <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                         # Show data
@@ -187,7 +209,7 @@ server = function(input, output, session) {
         
         
         
-### go2: Calculates the interfering ions tab ###
+        ### go2: Calculates the interfering ions tab ###
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -282,7 +304,7 @@ server = function(input, output, session) {
         })
         # go2 end
         
-### go3: Skyline tab ###
+        ### go3: Skyline tab ###
         
         CP_allions_skyline <- eventReactive(input$go3, {
                 
@@ -300,7 +322,14 @@ server = function(input, output, session) {
                 CP_allions_sky <- list()
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-                        input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), threshold = threshold())
+                        
+                        if(Adducts == "[BCA+Cl]-"){
+                                input <- getSkyline_BrCl(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
+                                                         Br = Br(), Brmax = Brmax(), threshold = threshold())
+                        } else {
+                                input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
+                        }
+                        
                         CP_allions_sky <- rbind(CP_allions, input)
                         
                 }
@@ -309,61 +338,64 @@ server = function(input, output, session) {
         # The IonFormula is not activated yet since not compatible with [M-Cl]- (adduct not available in skyline)
         shiny::observeEvent(input$go3, {
                 if(input$skylineoutput == "IonFormula"){
-                CP_allions_skyline <- CP_allions_skyline() %>%
-                        mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
-                                                                str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`))) %>%
-                        rename(`Molecule Name` = Parent_Formula) %>%
-                        mutate(`Molecular Formula` = case_when(
-                                `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
-                                `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
-                        )) %>%
-                        mutate(`Precursor Adduct` = str_replace(Adduct, "\\].*", "]")) %>%
-                        mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
-                        rename(Note = Adduct) %>%
-                        rename(`Precursor Charge` = Charge) %>%
-                        add_column(`Explicit Retention Time` = NA) %>%
-                        add_column(`Explicit Retention Time Window` = NA) %>%
-                        group_by(`Molecule Name`) |> 
-                        mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
-                        ungroup() |> 
-                        select(`Molecule List Name`, 
-                               `Molecule Name`, 
-                               `Molecular Formula`, 
-                               `Precursor Adduct`,
-                               `Precursor Charge`,
-                               `Label Type`,
-                               `Explicit Retention Time`, 
-                               `Explicit Retention Time Window`, 
-                               Note)
-                
-                
-                
-                output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
-                        # Show data
-                        DT::datatable(CP_allions_skyline, 
-                                      filter = "top", extensions = c("Buttons", "Scroller"),
-                                      options = list(scrollY = 650,
-                                                     scrollX = 500,
-                                                     deferRender = TRUE,
-                                                     scroller = TRUE,
-                                                     buttons = list(list(extend = "excel", filename = "Skyline_transition_list", title = NULL,
-                                                                         exportOptions = list(
-                                                                                 modifier = list(page = "all")
-                                                                         )),
-                                                                    list(extend = "csv", filename = "Skyline_transition_list", title = NULL,
-                                                                         exportOptions = list(
-                                                                                 modifier = list(page = "all")
-                                                                         )),
-                                                                    list(extend = "colvis", targets = 0, visible = FALSE)),
-                                                     dom = "lBfrtip",
-                                                     fixedColumns = TRUE), 
-                                      rownames = FALSE)
-                })
+                        CP_allions_skyline <- CP_allions_skyline() %>%
+                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
+                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`),
+                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", `12C`))) %>%
+                                rename(`Molecule Name` = Parent_Formula) %>%
+                                mutate(`Molecular Formula` = case_when(
+                                        `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
+                                        `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
+                                )) %>%
+                                mutate(`Precursor Adduct` = str_replace(Adduct, "\\].*", "]")) %>%
+                                mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
+                                rename(Note = Adduct) %>%
+                                rename(`Precursor Charge` = Charge) %>%
+                                add_column(`Explicit Retention Time` = NA) %>%
+                                add_column(`Explicit Retention Time Window` = NA) %>%
+                                group_by(`Molecule Name`) |> 
+                                mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
+                                ungroup() |> 
+                                select(`Molecule List Name`, 
+                                       `Molecule Name`, 
+                                       `Molecular Formula`, 
+                                       `Precursor Adduct`,
+                                       `Precursor Charge`,
+                                       `Label Type`,
+                                       `Explicit Retention Time`, 
+                                       `Explicit Retention Time Window`, 
+                                       Note)
+                        
+                        
+                        
+                        output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
+                                # Show data
+                                DT::datatable(CP_allions_skyline, 
+                                              filter = "top", extensions = c("Buttons", "Scroller"),
+                                              options = list(scrollY = 650,
+                                                             scrollX = 500,
+                                                             deferRender = TRUE,
+                                                             scroller = TRUE,
+                                                             buttons = list(list(extend = "excel", filename = "Skyline_transition_list", title = NULL,
+                                                                                 exportOptions = list(
+                                                                                         modifier = list(page = "all")
+                                                                                 )),
+                                                                            list(extend = "csv", filename = "Skyline_transition_list", title = NULL,
+                                                                                 exportOptions = list(
+                                                                                         modifier = list(page = "all")
+                                                                                 )),
+                                                                            list(extend = "colvis", targets = 0, visible = FALSE)),
+                                                             dom = "lBfrtip",
+                                                             fixedColumns = TRUE), 
+                                              rownames = FALSE)
+                        })
+                        
                 }else if(input$skylineoutput == "mz"){
                         
                         CP_allions_skyline2 <- CP_allions_glob() %>%
                                 mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
-                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`))) %>%
+                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`),
+                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", `12C`))) %>%
                                 rename(`Molecule Name` = Parent_Formula) %>%
                                 mutate(`Precursor m/z` = `m/z`) %>% 
                                 # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>% 
@@ -407,7 +439,7 @@ server = function(input, output, session) {
                                               rownames = FALSE)
                         })
                 }
-                        
+                
                 
         })
         

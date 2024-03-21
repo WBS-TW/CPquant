@@ -183,7 +183,44 @@ CP_allions_skyline  <- CP_allions_sky
 ```
 
 
+test bromochloroalkanes
+```{r}
 
+library(shiny)
+library(shinythemes)
+library(DT)
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(crosstalk)
+library(enviPat)
+library(markdown)
+
+data("isotopes")
+source("./R/getAdduct.R")
+source("./R/getSkyline.R")
+
+
+Cmin <- 10
+Cmax  <- 30
+Clmin <- 5
+Clmax <- 10
+Brmin <- 1
+Brmax <- 5
+Adduct <- "[BCA+Cl]-"
+threshold <- 50
+MSresolution <- 60000
+
+C <- as.integer(Cmin:Cmax)
+Cl <- as.integer(Clmin:Clmax)
+Br <- as.integer(Brmin:Brmax)
+selectedAdducts <- Adduct
+Adducts <- as.character(selectedAdducts)
+i <- 1
+adduct_ions = Adducts[i]
+
+
+```
 
 
 
