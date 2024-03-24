@@ -1,8 +1,6 @@
 
 # Introduction
   
-...TEXT...
-
 Utilizes the isopattern function of the R package Envipat (Loos et al, Analytical Chemistry, 2015, 87, 5738-5744).
 
 
