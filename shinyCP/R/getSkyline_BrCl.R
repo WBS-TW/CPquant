@@ -14,7 +14,7 @@ getSkyline_BrCl <- function(adduct_ions, C, Cl, Clmax, Br, Brmax, threshold) {
                         filter(Cl < Clmax) %>% # limit chlorine atoms.
                         filter(Br < Brmax) %>%
                         filter(Br + Cl <= C) %>%
-                        mutate(H = 2*C-Cl-Br) %>% # add H atoms
+                        mutate(H = 2*C+2-Cl-Br) %>% # add H atoms
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl, "Br", Br)) %>% #add chemical formula
                         select(Formula, C, H, Cl, Br) # move Formula to first column
         }  else {
