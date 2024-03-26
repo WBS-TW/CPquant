@@ -55,6 +55,8 @@ ggplot(RECOVERY, aes(x = `Replicate Name`, y = RecoveryPerc, fill = color)) +
         labs(x = "Replicate Name", y = "RECOVERY", title = "RECOVERY") +
         theme_minimal()
 
+
+
 #################################################################################################
 ##################################### SCCPs##################################################
 ##################################################################################################
@@ -810,8 +812,8 @@ for (sample_name in unique_sample_names) {
         
         
         
-        ####################################RUN PATTERN RECONSTRUCTION FOR SELECTED (LOADED) SAMPLE####################
-        #This section is mostly how it was given, I only included the info to fill in the empty list that I created at the begging so I will get the results for each sample. I also combined all results into one data frame so I would not have one data frame for ach sample. 
+####################################RUN PATTERN RECONSTRUCTION FOR SELECTED (LOADED) SAMPLE####################
+#This section is mostly how it was given, I only included the info to fill in the empty list that I created at the begging so I will get the results for each sample. I also combined all results into one data frame so I would not have one data frame for ach sample. 
         
         sample_df <- sample_df |> 
                 mutate(
