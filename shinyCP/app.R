@@ -9,7 +9,7 @@
 
 
 # TO FIX
-# # CP_allions and CP_allions_skyline gives different number of rows
+# Cl and BrCl cannot be chosen at the same time. Not
 
 
 # Information:
@@ -167,16 +167,16 @@ server = function(input, output, session) {
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get adducts or fragments
-                CP_allions <- list()
+                CP_allions <- data.frame(Parent_Formula = character(), Halo_perc = double())
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-                        if(Adducts == "[BCA+Cl]-"){
+                        if(Adducts[i] == "[BCA+Cl]-"){
                                 input <- getAdduct_BrCl(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), 
                                                         Br = Br(), Brmax = Brmax(), threshold = threshold())
                         } else {
                                 input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
                         }
-                        CP_allions <- rbind(CP_allions, input)
+                        CP_allions <- dplyr::full_join(CP_allions, input)
                 }
                 return(CP_allions)
         })
@@ -319,11 +319,11 @@ server = function(input, output, session) {
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get Skyline adducts or fragments
-                CP_allions_sky <- list()
+                CP_allions_sky <- data.frame(Parent_Formula = character(), Halo_perc = double())
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         
-                        if(Adducts == "[BCA+Cl]-"){
+                        if(Adducts[i] == "[BCA+Cl]-"){
                                 input <- getSkyline_BrCl(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
                                                          Br = Br(), Brmax = Brmax(), threshold = threshold())
                         } else {

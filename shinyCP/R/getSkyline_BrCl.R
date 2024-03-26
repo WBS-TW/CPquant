@@ -39,7 +39,7 @@ getSkyline_BrCl <- function(adduct_ions, C, Cl, Clmax, Br, Brmax, threshold) {
         if (fragment_ions == "+Br") {        
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Halo_perc = round((35.45*Cl+78.92*Br) / (12.01*C + 1.008*(2*C-Cl-Br) + 35.45*Cl+78.92*Br)*100, 0)) %>%
+                        mutate(Halo_perc = round((35.45*Cl+79.90*Br) / (12.01*C + 1.008*(2*C-Cl-Br) + 35.45*Cl+79.90*Br)*100, 0)) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl) %>%
                         mutate(Br = Br+1) |> 
@@ -48,7 +48,7 @@ getSkyline_BrCl <- function(adduct_ions, C, Cl, Clmax, Br, Brmax, threshold) {
         } else {
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Halo_perc = round((35.45*Cl+78.92*Br) / (12.01*C + 1.008*(2*C-Cl-Br) + 35.45*Cl+78.92*Br)*100, 0)) %>%
+                        mutate(Halo_perc = round((35.45*Cl+79.90*Br) / (12.01*C + 1.008*(2*C-Cl-Br) + 35.45*Cl+79.90*Br)*100, 0)) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl, "Br", Br)) %>%
