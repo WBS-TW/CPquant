@@ -1,21 +1,4 @@
-# TODO
 
-# use isowrap instead to get more accurate envelope profile isotopic fine structure
-# # Add other analogues such as:
-# carboxylates: C16HxCl4−7O2 (https://pubs.rsc.org/en/content/articlelanding/2023/em/d2em00494a)
-# BCP and BCO: https://pubs.acs.org/doi/10.1021/acs.est.2c03576
-# Sulfur PCAs: https://pubs.acs.org/doi/10.1021/acs.est.3c10056
-# CFAMES: https://pubs.acs.org/doi/10.1021/acs.analchem.2c02158
-
-
-# TO FIX
-# Cl and BrCl cannot be chosen at the same time. Not
-
-
-# Information:
-# Reactive log: https://shiny.rstudio.com/articles/debugging.html
-
-# Skyline adducts: # https://skyline.ms/wiki/home/software/Skyline/page.view?name=adduct_descriptions
 
 library(shiny)
 library(shinythemes)
@@ -36,7 +19,7 @@ source("./R/getSkyline.R")
 #--------------------------------UI function----------------------------------#
 
 ui <- shiny::navbarPage(
-        "PCA/PCO explorer",
+        "PCXplorer",
         theme = shinythemes::shinytheme('spacelab'),
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
