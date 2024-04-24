@@ -46,20 +46,6 @@ adduct_ions = Adducts[i]
 ```
 
 
-First tab
-```{r}
-
-
-# function to get adducts or fragment
-CP_allions <- list()
-for (i in seq_along(Adducts)) {
-        input <- getAdduct(adduct_ions = Adducts[i], C = C, Cl = Cl, threshold = threshold)
-        CP_allions <- rbind(CP_allions, input)
-        }
-CP_allions_glob <- CP_allions
-
-
-```
 
 
 Skyline tab
@@ -183,7 +169,56 @@ CP_allions_skyline  <- CP_allions_sky
 ```
 
 
+test bromochloroalkanes
+```{r}
 
+library(shiny)
+library(shinythemes)
+library(DT)
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(crosstalk)
+library(enviPat)
+library(markdown)
+
+data("isotopes")
+source("./R/getAdduct.R")
+source("./R/getSkyline.R")
+
+
+Cmin <- 10
+Cmax  <- 14
+Clmin <- 5
+Clmax <- 7
+Brmin <- 1
+Brmax <- 2
+Adduct <- "[BCA+Cl]-"
+Adduct <- c("[BCA+Cl]-", "[PCA+Cl]-")
+threshold <- 50
+MSresolution <- 60000
+
+C <- as.integer(Cmin:Cmax)
+Cl <- as.integer(Clmin:Clmax)
+Br <- as.integer(Brmin:Brmax)
+selectedAdducts <- Adduct
+Adducts <- as.character(selectedAdducts)
+i <- 1
+adduct_ions = Adducts[i]
+
+CP_allions <- data.frame(Parent_Formula = character(), Halo_perc = double())
+for (i in seq_along(Adducts)) {
+        if(Adducts[i] == "[BCA+Cl]-"){
+                input <- getAdduct_BrCl(adduct_ions = Adducts[i], C = C, Cl = Cl, Clmax = Clmax, 
+                                        Br = Br, Brmax = Brmax, threshold = threshold)
+        } else {
+                input <- getAdduct(adduct_ions = Adducts[i], C = C, Cl = Cl, Clmax = Clmax, threshold = threshold)
+        }
+        
+        CP_allions <- dplyr::full_join(CP_allions, input)
+                }
+
+```
 
 
 
