@@ -1,8 +1,9 @@
 
 
 getAdduct_BrCl <- function(adduct_ions, C, Cl, Br, Clmax, Brmax, threshold) {
-        
+        ####################################################################         
         # Regex to extract strings
+        #################################################################### 
         ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # Using lookbehind assertion to extract ion mode
         fragment_ions <- str_extract(adduct_ions, "(?<=.{4}).+?(?=\\])") # extract after the 3rd character and before ]
         group <- str_extract(adduct_ions, "[^\\[].{2}") # Using positive lookbehind for [)
@@ -32,7 +33,9 @@ getAdduct_BrCl <- function(adduct_ions, C, Cl, Br, Clmax, Brmax, threshold) {
                         mutate(Charge = as.integer(1))
         }
         
-        # generate input data for envipat based on fragment_ions
+        ####################################################################       
+        ####### generate input data for envipat based on fragment_ions
+        #################################################################### 
         
         if (fragment_ions == "-Cl") { # Generate fragments M-Cl for each homolog formula  
                 data <- data %>%
