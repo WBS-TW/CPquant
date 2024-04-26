@@ -2,6 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-*TODO.txt
-/other_info_scripts
-/test
+TODO.txt
+other_info_scripts/
+test/
