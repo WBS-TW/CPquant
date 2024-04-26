@@ -252,7 +252,7 @@ server = function(input, output, session) {
                                                   "Ion Formula:", CP_allions_compl2$Adduct_Formula,
                                                   '<br>',
                                                   "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
-                                                                             "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`),
+                                                                             "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`, " [79Br]:", CP_allions_compl2$`79Br`, " [81Br]:", CP_allions_compl2$`81Br`),
                                                   '<br>',
                                                   "m/z:", CP_allions_compl2$`m/z`,
                                                   '<br>',
