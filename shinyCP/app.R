@@ -213,7 +213,7 @@ server = function(input, output, session) {
                 output$Plotly <- plotly::renderPlotly(
                         p <- CP_allions_compl2 %>% plot_ly(
                                 x = ~ (`12C`+`13C`), 
-                                y = ~(`35Cl`+`37Cl`),
+                                y = ~(`35Cl`+`37Cl`+`79Br`+`81Br`),
                                 type = "scatter",
                                 mode = "markers",
                                 color = ~interference,
@@ -225,11 +225,11 @@ server = function(input, output, session) {
                                                   "Ion Formula:", CP_allions_compl2$Adduct_Formula,
                                                   '<br>',
                                                   "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
-                                                                             "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`))
+                                                                             "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`, " [79Br]:", CP_allions_compl2$`79Br`, " [81Br]:", CP_allions_compl2$`81Br`))
                         )
                         %>% 
                                 plotly::layout(xaxis = list(title = "Number of carbons (12C+13C)"),
-                                               yaxis = list(title = "Number of chlorines (35Cl+37Cl)"),
+                                               yaxis = list(title = "Number of halogens (35Cl+37Cl+79Br+81Br)"),
                                                legend=list(title=list(text='<b> Interference at MS res? </b>')))
                 )
                 
