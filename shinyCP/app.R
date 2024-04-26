@@ -1,5 +1,3 @@
-
-
 library(shiny)
 library(shinythemes)
 library(DT)
@@ -13,7 +11,8 @@ library(markdown)
 data("isotopes")
 source("./R/getAdduct.R")
 source("./R/getSkyline.R")
-
+source("./R/getAdduct_BrCl.R")
+source("./R/getSkyline_BrCl.R")
 
 
 #--------------------------------UI function----------------------------------#
@@ -30,25 +29,24 @@ ui <- shiny::navbarPage(
                                         shiny::numericInput("Clmax", "Cl atoms max (allowed 1-15)", value = 15, min = 1, max = 15),
                                         shiny::numericInput("Brmin", "Br atoms min (allowed 1-15))", value = 1, min = 1, max = 15),
                                         shiny::numericInput("Brmax", "Br atoms max (allowed 1-15)", value = 4, min = 1, max = 15),
-                                        #shiny::uiOutput("BrCl_slider"),
                                         shiny::br(),
                                         selectInput("Adducts", "Add adducts/fragments",
                                                     choices = c("[PCA-Cl]-", 
                                                                 "[PCA-H]-",
                                                                 "[PCA-HCl]-", 
-                                                                #"[PCA-Cl-HCl]-", #Needs to verify that regex extraction in getAdduct can get these ions before adding these
-                                                                #"[PCA-2Cl-HCl]-", 
+                                                                "[PCA-Cl-HCl]-", 
+                                                                "[PCA-2Cl-HCl]-", 
                                                                 "[PCA+Cl]-", 
                                                                 "[PCO-Cl]-", 
                                                                 "[PCO-HCl]-", 
                                                                 "[PCO-H]-",
                                                                 "[PCO+Cl]-",
                                                                 "[PCA+Br]-",
-                                                                "[BCA+Cl]-"
-                                                                #"[PCA-Cl-HCl]+", 
-                                                                #"[PCA-Cl-2HCl]+", 
-                                                                #"[PCA-Cl-3HCl]+", 
-                                                                #"[PCA-Cl-4HCl]+"),
+                                                                "[BCA+Cl]-",
+                                                                "[PCA-Cl-HCl]+", 
+                                                                "[PCA-Cl-2HCl]+", 
+                                                                "[PCA-Cl-3HCl]+", 
+                                                                "[PCA-Cl-4HCl]+"
                                                     ),
                                                     selected = "[PCA-Cl]-",
                                                     multiple = TRUE,
