@@ -211,7 +211,10 @@ server = function(input, output, session) {
                 
                 # Output scatterplot: #Cl vs #C
                 output$Plotly <- plotly::renderPlotly(
-                        p <- CP_allions_compl2 %>% plot_ly(
+                        p <- CP_allions_compl2 %>% 
+                                mutate(`79Br` = tidyr::replace_na(`79Br`, 0)) %>%
+                                mutate(`81Br` = tidyr::replace_na(`81Br`, 0)) %>%
+                                plot_ly(
                                 x = ~ (`12C`+`13C`), 
                                 y = ~(`35Cl`+`37Cl`+`79Br`+`81Br`),
                                 type = "scatter",
