@@ -188,8 +188,7 @@ list_of_samples <- split(TESTINGB, TESTINGB$`Replicate Name`)
         
         # Combine all results into a single data frame
         Combinations <- do.call(cbind, SCCP_MCCP_combinations)
-        Combinations1 <- Combinations[, 1:3]
-        Combinations2 <- Combinations[, 4:6]
+     
         
         # Store sum RFs for each group CP standard
         input <- input |> 
@@ -220,7 +219,7 @@ for (sample_name in 1:length(unique_sample_names)) {
         
         
 ####################################RUN PATTERN RECONSTRUCTION FOR SELECTED (LOADED) SAMPLE####################
-#This section is mostly how it was given, I only included the info to fill in the empty list that I created at the begging so I will get the results for each sample. I also combined all results into one data frame so I would not have one data frame for each sample. 
+#This section follows the structure that was in the original script
   
 
 ######################################################If I prepare combinations in columns 1:3 for SCCPs and 4:6 for MCCPs#############################################
