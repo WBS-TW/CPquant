@@ -17,7 +17,7 @@ __C atoms min__ and __C atoms max__: the range of carbon atoms.
   
 __Cl atoms min__ and __Cl atoms max__: the range of chlorine atoms.  
 
-__Br atoms min__ and __Br atoms max__: the range of bromine atoms. This is only valid if BCA (bromo-chloro alkanes) is choosen as adducts.
+__Br atoms min__ and __Br atoms max__: the range of bromine atoms. This is only used if BCA (bromo-chloro alkanes) is choosen as adducts (otherwise this parameter can be ignored).
   
 __Add adducts/fragments__: refers to the formula of adducts and/or fragments to generate from a set list of available options. Multiple selections are possible.  
   
