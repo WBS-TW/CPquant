@@ -1,8 +1,7 @@
+# CPquant: Shiny CPs Quantification for Skyline Output
 #
 #
 #
-#
-
 library(shiny)
 library(tidyverse)
 library(readxl)
@@ -10,18 +9,23 @@ library(plotly)
 library(DT)
 library(nnls)
 
-# Define UI for application that draws a histogram
-ui <- shiny::navbarPage("Quantification by deconvolution",
+# UI
+ui <- shiny::navbarPage("Quantification by deconvolution from Skyline output",
         shiny::tabPanel("Quantification Inputs", 
                         shiny::fluidPage(shiny::sidebarLayout(
                                 shiny::sidebarPanel(
                                         shiny::fileInput("fileInput", "Import excel file from Skyline", 
                                                          accept = c('xlsx')),
+                                        shiny::radioButtons("quantstd",
+                                                            label = "Quantification based on chain length or mixture standards?",
+                                                            choices = c("Chain length",
+                                                                        "Mixture",
+                                                                        "Both")),
                                         shiny::radioButtons("blanks",
                                                             label = "Blank subtraction",
                                                             choices = c("no blank subtraction",
                                                                         "blank subtraction based on peak area",
-                                                                        "blank subtraction based on final concentration")
+                                                                        "blank subtraction based on final concentrations")
                                                             ),
                                         shiny::selectInput("includedCPs", "Include which CPs for quantification?",
                                                            choices = c("vSCCPs", "SCCPs", "MCCPs", "LCCPs", "vLCCPs"),
@@ -65,7 +69,7 @@ server <- function(input, output) {
                                 shiny::selectInput(
                                         inputId = "standardType", #select which variable to use to define standards
                                         label = "Variable for annotating standards",
-                                        choices = names(Skyline_output()) # select variable
+                                        choices = names(Skyline_output()) # select variable. TODO: set default to NOTE
                                         )
                                 ),
                         shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), 
@@ -73,12 +77,22 @@ server <- function(input, output) {
                         shiny::column(
                                 6,
                                 shiny::selectInput(
-                                        inputId = "removeSamples",
+                                        inputId = "removeSamples", #select if some samples will be removed. allows 
                                         label = 'Samples to remove from quantification?',
                                         choices = unique(Skyline_output()$`Replicate Name`),
                                         multiple = TRUE
                                         )
-                                )
+                                ),
+                        shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), 
+                        shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(),
+                        shiny::column(
+                                6,
+                                shiny::radioButtons("ISRS", label = "Included IS and RS?", #select which Molecule to define IS/RS
+                                                    choices = c("None",
+                                                                "IS only",
+                                                                "RS only",
+                                                                "Both IS and RS")) # select variable. TODO: set default to NOTE
+                                )      
                         )
                 })
         
@@ -93,15 +107,21 @@ server <- function(input, output) {
                 
         })
         
-        # Render input summary statistics and plots
+        # Render summary statistics and plots of raw input BEFORE quantification
         output$inputSummary <- shiny::renderUI({
-                shiny::fluidRow(shiny::column(6, plotly::plotlyOutput("Plot1"))
+                shiny::fluidRow(shiny::column(6, plotly::plotlyOutput("plotSummary1"))
                                 )
                 })
         
-        output$Plot1 <- plotly::renderPlotly({
+        output$plotSummary1 <- plotly::renderPlotly({
                 Skyline_output() |>
-                                plotly::plot_ly()
+                        dplyr::filter(`Isotope Label Type` == "Quan") |> 
+                                plotly::plot_ly(
+                                         x = ~ Molecule,
+                                         y = ~ `Normalized Area`,
+                                         color = ~ `Sample Type`,
+                                         type = "box"
+                                )
                 })
         
 }
