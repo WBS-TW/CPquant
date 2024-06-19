@@ -21,7 +21,7 @@ ui <- shiny::navbarPage("Quantification by deconvolution from Skyline output",
                                                             choices = c("Chain length",
                                                                         "Mixture",
                                                                         "Both")),
-                                        shiny::radioButtons("blanks",
+                                        shiny::radioButtons("blankSubtraction",
                                                             label = "Blank subtraction",
                                                             choices = c("no blank subtraction",
                                                                         "blank subtraction based on peak area",
@@ -72,6 +72,17 @@ server <- function(input, output) {
                                         choices = names(Skyline_output()) # select variable. TODO: set default to NOTE
                                         )
                                 ),
+                        shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), 
+                        shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(),
+                        shiny::column(
+                                6,
+                                shiny::selectInput(
+                                        inputId = "blanks", #select which variable to use to define standards
+                                        label = "Define which samples are blanks",
+                                        choices = unique(Skyline_output()$`Replicate Name`),
+                                        multiple = TRUE
+                                )
+                        ),
                         shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), 
                         shiny::tags$br(), shiny::tags$br(), shiny::tags$br(), shiny::tags$br(),
                         shiny::column(

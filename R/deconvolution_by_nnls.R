@@ -1,6 +1,8 @@
 
 ## Setup automatic nnls deconvolution process from Skyline excel output
-
+library(tidyverse)
+library(readxl)
+library(nnls)
 #### TODO ####
 #filter(rsquared > 0.7) #cannot do this as some are still false positive and need to replace formula later with 0 for nnls 
 
