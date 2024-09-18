@@ -65,9 +65,7 @@ ui <- shiny::navbarPage("Quantification by deconvolution from Skyline output",
                         shiny::tabPanel(
                                 "QA/QC",
                                 shiny::mainPanel(
-                                        DT::DTOutput("table2"),   # First table output (Skyline recovery data)
-                                        br(),                     # Optional line break to add space between the tables
-                                        DT::DTOutput("LOD")        # Second table output (LOD table)
+                                        DT::DTOutput("table2")        # Second table output (LOD table)
                                 )
                         )
                         
@@ -858,36 +856,7 @@ server <- function(input, output, session) {
                 )
         })
         
-        # Define a reactive block for the LOD table
-        LOD_summary <- reactive({
-                # Ensure data is available
-                df_samples <- Samples_Concentration()  # Use the reactive data source for Samples_Concentration
-                
-                req(df_samples)
-                
-                # Filter for 'Blank' Sample Type and calculate the standard deviation of 'Samples_Concentration'
-                lod_sd <- df_samples |> 
-                        filter(`Sample Type` == "Blank") |> 
-                        summarize(LOD = sd(Concentration, na.rm = TRUE) * 3)  # Multiply by 3 for LOD
-                
-                # Convert to data frame
-                lod_sd <- as.data.frame(lod_sd)
-                
-                lod_sd
-        })
-        
-        # Render the LOD table
-        output$LOD <- DT::renderDT({
-                lod_data <- LOD_summary()  # Get the reactive data
-                
-                DT::datatable(lod_data,
-                              options = list(
-                                      pageLength = 10,
-                                      dom = 't'  # Table only, without additional controls
-                              ),
-                              rownames = FALSE
-                )
-        })
+      
         
         
         # Close the app when the session ends
