@@ -541,7 +541,7 @@ server <- function(input, output, session) {
                 CPs_standardsM<-CPs_standards |> 
                         filter(str_detect(Note, "M-")) |> 
                         mutate(Response_factor = if_else(Chain_length %in% c("C10", "C11", "C12", "C13", "C18", "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C27", "C28", "C29", "C30"), 0, Response_factor))  
-                #For MCCPs
+                #For LCCPs
                 CPs_standardsL<-CPs_standards |> 
                         filter(str_detect(Note, "L-")) |> 
                         mutate(Response_factor = if_else(Chain_length %in% c("C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"), 0, Response_factor))  
@@ -549,7 +549,7 @@ server <- function(input, output, session) {
                 CPs_standards<- rbind(CPs_standardsS, CPs_standardsM, CPs_standardsL)
                 
                 CPs_samples <- Skyline_output_filt |> 
-                        filter(`Sample Type` == "Unknown",
+                        filter(`Sample Type` %in% c("Unknown", "Blank"),
                                Molecule != "IS",
                                Molecule != "RS",
                                `Isotope Label Type` == "Quan") |> 
