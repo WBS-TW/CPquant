@@ -787,16 +787,14 @@ server <- function(input, output, session) {
         
         
         
-        
-        
+###########################################################RECOVERY#######################################################
         
         
         # Define the QA/QC reactive block
         Skyline_recovery <- reactive({
                 # Ensure data is available
                 df <- Skyline_output()  # Use the reactive data source
-                
-                req(df)
+                req(df)  # Make sure df is not NULL
                 
                 # Prepare RECOVERY Data
                 RECOVERY <- df |> 
@@ -804,7 +802,15 @@ server <- function(input, output, session) {
                         pivot_wider(id_cols = c(`Replicate Name`, `Sample Type`),
                                     names_from = Molecule, 
                                     values_from = Area) |>  # Spread IS and RS into columns
-                        mutate(across(c(IS, RS), ~replace_na(.x, 0)))  # Replace NAs with 0 for calculation safety
+                        as.data.frame()  # Convert to data frame for consistency
+                
+                # Check if IS and RS columns exist before trying to mutate them
+                if ("IS" %in% colnames(RECOVERY) & "RS" %in% colnames(RECOVERY)) {
+                        RECOVERY <- RECOVERY |> 
+                                mutate(across(c(IS, RS), ~replace_na(.x, 0)))  # Replace NAs with 0 for IS and RS
+                } else {
+                        stop("Required columns 'IS' or 'RS' are missing from the data.")
+                }
                 
                 # Calculate AverageRatio for Quality Control
                 dfR <- RECOVERY |> 
@@ -812,27 +818,35 @@ server <- function(input, output, session) {
                         mutate(RatioStd = IS / RS) |> 
                         summarize(AverageRatio = mean(RatioStd, na.rm = TRUE))
                 
+                # Ensure dfR is valid
+                if (nrow(dfR) == 0) {
+                        stop("No Quality Control samples found.")
+                }
+                
                 # RECOVERY Calculation
                 RECOVERY <- RECOVERY |> 
                         filter(`Sample Type` %in% c("Unknown", "Blank")) |>  
                         mutate(RatioSample = IS / RS) |> 
                         mutate(Recovery = RatioSample / as.numeric(dfR$AverageRatio)) |>  
-                        mutate(RecoveryPercentageentage = round(Recovery * 100, 0)) |>  # Round RecoveryPercentage to 0 decimals
-                        select(`Replicate Name`, `Sample Type`, RecoveryPercentage) |>  # Select only relevant columns
-                        as.data.frame()  # Convert to data frame
+                        mutate(RecoveryPercentage = round(Recovery * 100, 0)) |>  # Round Recovery to 0 decimals
+                        select(`Replicate Name`, `Sample Type`, RecoveryPercentage)  # Select only relevant columns
                 
                 # Replace NA values with 0 if necessary
                 RECOVERY[is.na(RECOVERY)] <- 0
                 
-                RECOVERY
+                return(RECOVERY)
         })
         
         # Render the QA/QC datatable with only RecoveryPercentage column
         output$table2 <- DT::renderDT({
                 RECOVERY <- Skyline_recovery()  # Get the reactive data
                 
+                # Check if RECOVERY has data
+                req(nrow(RECOVERY) > 0)
+                
                 DT::datatable(RECOVERY, 
-                              filter = "top", extensions = c("Buttons", "Scroller"),
+                              filter = "top", 
+                              extensions = c("Buttons", "Scroller"),
                               options = list(
                                       scrollY = 650,
                                       scrollX = 500,
@@ -840,15 +854,21 @@ server <- function(input, output, session) {
                                       scroller = TRUE,
                                       buttons = list(
                                               list(
-                                                      extend = "excel", filename = "Samples_recovery", title = NULL,
+                                                      extend = "excel", 
+                                                      filename = "Samples_recovery", 
+                                                      title = NULL,
                                                       exportOptions = list(modifier = list(page = "all"))
                                               ),
                                               list(
-                                                      extend = "csv", filename = "Samples_recovery", title = NULL,
+                                                      extend = "csv", 
+                                                      filename = "Samples_recovery", 
+                                                      title = NULL,
                                                       exportOptions = list(modifier = list(page = "all"))
                                               ),
                                               list(
-                                                      extend = "colvis", targets = 0, visible = FALSE
+                                                      extend = "colvis", 
+                                                      targets = 0, 
+                                                      visible = FALSE
                                               )
                                       ),
                                       dom = "lBfrtip",
@@ -857,6 +877,9 @@ server <- function(input, output, session) {
                               rownames = FALSE
                 )
         })
+        
+
+###################################################################LOD####################################
         
         # Define a reactive block for the LOD table
         LOD_summary <- reactive({
