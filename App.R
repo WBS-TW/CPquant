@@ -106,15 +106,16 @@ server <- function(input, output, session) {
                 
                 #  Normalize data based on 'Include IS only' input using case_when
                 df <- df |> 
-                        group_by('Replicate Name')  |>
+                        group_by(`Replicate Name`) |>
                         filter(`Isotope Label Type` == "Quan") |>
                         mutate(Area = case_when(
-                                input$includeISOnly == "Yes" ~ Area / Area[Molecule == "RS"],
+                                input$includeISOnly == "Yes" & any(Molecule == "RS") ~ Area / first(Area[Molecule == "RS"]),
                                 TRUE ~ Area
                         )) |> 
                         ungroup()
                 
                 df
+                
                 
                 
                 # Calculate the average blank value
@@ -533,20 +534,28 @@ server <- function(input, output, session) {
                         group_by(!!!input$standardAnnoColumn, Chain_length) |> #grouping by the selected Note
                         mutate(Sum_response_factor_chainlength = sum(Response_factor, na.rm = TRUE)) |> 
                         ungroup()
-                #For SCCPs
-                CPs_standardsS<-CPs_standards |> 
+                # For SCCPs
+                CPs_standardsS <- CPs_standards |> 
                         filter(str_detect(Note, "S-")) |> 
-                        mutate(Response_factor = if_else(Chain_length %in% c("C14", "C15", "C16", "C17", "C18", "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C27", "C28", "C29", "C30"), 0, Response_factor))  
-                #For MCCPs
-                CPs_standardsM<-CPs_standards |> 
+                        mutate(Response_factor = if_else(Chain_length %in% c("C14", "C15", "C16", "C17", "C18", "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C27", "C28", "C29", "C30"), 0, Response_factor))
+                
+                # For MCCPs
+                CPs_standardsM <- CPs_standards |> 
                         filter(str_detect(Note, "M-")) |> 
-                        mutate(Response_factor = if_else(Chain_length %in% c("C10", "C11", "C12", "C13", "C18", "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C27", "C28", "C29", "C30"), 0, Response_factor))  
-                #For LCCPs
-                CPs_standardsL<-CPs_standards |> 
+                        mutate(Response_factor = if_else(Chain_length %in% c("C10", "C11", "C12", "C13", "C18", "C19", "C20", "C21", "C22", "C23", "C24", "C25", "C26", "C27", "C28", "C29", "C30"), 0, Response_factor))
+                
+                # For LCCPs
+                CPs_standardsL <- CPs_standards |> 
                         filter(str_detect(Note, "L-")) |> 
-                        mutate(Response_factor = if_else(Chain_length %in% c("C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"), 0, Response_factor))  
-                #Together
-                CPs_standards<- rbind(CPs_standardsS, CPs_standardsM, CPs_standardsL)
+                        mutate(Response_factor = if_else(Chain_length %in% c("C10", "C11", "C12", "C13", "C14", "C15", "C16", "C17"), 0, Response_factor))
+                
+                # Combine groups, only including those that have data
+                CPs_standards_list <- list(CPs_standardsS, CPs_standardsM, CPs_standardsL)
+                
+                # Filter out empty data frames before binding
+                CPs_standards <- bind_rows(Filter(function(x) nrow(x) > 0, CPs_standards_list))
+                
+              
                 
                 CPs_samples <- Skyline_output_filt |> 
                         filter(`Sample Type` %in% c("Unknown", "Blank"),
