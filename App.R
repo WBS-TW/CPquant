@@ -890,7 +890,7 @@ server <- function(input, output, session) {
         
 
 ###################################################################LOD####################################
-        
+      
         # Define a reactive block for the LOD table
         LOD_summary <- reactive({
                 # Ensure data is available
@@ -898,13 +898,9 @@ server <- function(input, output, session) {
                 
                 req(df_samples)
                 
-                # Debug: Print structure and unique sample types
-                print(str(df_samples))
-                print(unique(df_samples$`Sample Type`))
-                
-                # Filter for 'Blank' Sample Type and calculate the standard deviation of 'Concentration'
+                # Filter for 'Blank' Sample Type and calculate the standard deviation of 'Samples_Concentration'
                 lod_sd <- df_samples |> 
-                        filter(`Sample Type` == "Blank") |> 
+                        filter('Sample Type' == "Blank") |> 
                         summarize(LOD = sd(Concentration, na.rm = TRUE) * 3)  # Multiply by 3 for LOD
                 
                 # Convert to data frame
@@ -926,13 +922,16 @@ server <- function(input, output, session) {
                 )
         })
         
+        
         # Close the app when the session ends
-        if (!interactive()) {
+        if(!interactive()) {
                 session$onSessionEnded(function() {
                         stopApp()
                         q("no")
                 })
         }
+        
+}
         
 
 
