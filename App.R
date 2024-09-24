@@ -629,7 +629,7 @@ server <- function(input, output, session) {
                         deconv_reconst <- rowSums(combined_matrix %*% deconv_coef)
                         
                         # Ensure that values are positive for chi-square test
-                        if (any(deconv_resolved <= 0) || any(df_vector <= 0)) {
+                        if (all(deconv_resolved <= 0) || all(df_vector <= 0)) {
                                 warning("Non-positive values found, skipping chi-square test")
                                 chisq_result <- NULL
                         } else {
@@ -643,6 +643,7 @@ server <- function(input, output, session) {
                                 chisq_result = chisq_result
                         ))
                 }
+                
                 
                 # Apply the perform_deconvolution function to each nested data frame
                 Deconvolution <- combined_sample  |> 
