@@ -747,8 +747,8 @@ server <- function(input, output, session) {
                         select(`Sample Type`, everything())
                 
                 #Rename Replicate Name
-                #CPs_samples<-CPs_samples |> 
-                  #      rename(`Replicate.Name` = `Replicate Name`)
+                CPs_samples<-CPs_samples |> 
+                        rename(`Replicate.Name` = `Replicate Name`)
                 
                 # Merge total_sums_df into CPs_samples based on Replicate Name
                 Concentration <- CPs_samples  |> 
