@@ -738,15 +738,6 @@ server <- function(input, output, session) {
                 
                 
                 ################################################### FINAL RESULTS ####################################################################
-                #Prepare for LOD
-                ConcentrationB <- CPs_samples |> 
-                        left_join(total_sums_df, by = "Replicate.Name") |> 
-                        left_join(Skyline_output_filt |> select(`Replicate Name`, `Sample Type`), 
-                                  by = "Replicate.Name") |>  # Include Sample Type from Skyline_output_filt
-                        mutate(Concentration = `Relative_distribution` * `Total.Sum`) |> 
-                        select(`Sample Type`, everything())
-                
-                #Rename Replicate Name
                 CPs_samples<-CPs_samples |> 
                         rename(`Replicate.Name` = `Replicate Name`)
                 
@@ -754,7 +745,6 @@ server <- function(input, output, session) {
                 Concentration <- CPs_samples  |> 
                         left_join(total_sums_df, by = "Replicate.Name")  |> 
                         mutate(Concentration = `Relative_distribution` * `Total.Sum`)
-                
                 
                 print(Concentration)
                 Concentration<-Concentration |> 
@@ -804,7 +794,6 @@ server <- function(input, output, session) {
                         
                 })
         })
-        
         
         
 ###########################################################RECOVERY#######################################################
