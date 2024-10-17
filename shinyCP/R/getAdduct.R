@@ -1,8 +1,9 @@
 
 
-getAdduct <- function(adduct_ions, C, Cl, threshold) {
-        
+getAdduct <- function(adduct_ions, C, Cl, Clmax, threshold) {
+        ####################################################################         
         # Regex to extract strings
+        #################################################################### 
         ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # Using lookbehind assertion to extract ion mode
         fragment_ions <- str_extract(adduct_ions, "(?<=.{4}).+?(?=\\])") # extract after the 3rd character and before ]
         group <- str_extract(adduct_ions, "[^\\[].{2}") # Using positive lookbehind for [)
@@ -10,23 +11,21 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         if (group == "PCA") {
                 data <- crossing(C, Cl) %>% #set combinations of C and Cl
                         filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
-                        filter(Cl < 15) %>% # limit chlorine atoms. CHECK WITH LCCPs!!
+                        filter(Cl < Clmax) %>% # limit chlorine atoms. 
                         mutate(H = 2*C+2-Cl) %>% # add H atoms
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
                         select(Formula, C, H, Cl) # move Formula to first column
         } else if (group == "PCO") {
-                data <- crossing(C, Cl) %>% #set combinations of C and Cl
-                        filter(C >= Cl) %>% # filter so Cl dont exceed C atoms
-                        filter(Cl < 15) %>% # limit chlorine atoms. CHECK WITH LCCPs!!
-                        mutate(H = 2*C-Cl) %>% # add H atoms
-                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% #add chemical formula
-                        select(Formula, C, H, Cl) # move Formula to first column
+                data <- crossing(C, Cl) %>% 
+                        filter(C >= Cl) %>% 
+                        filter(Cl < Clmax) %>% 
+                        mutate(H = 2*C-Cl) %>% 
+                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>% 
+                        select(Formula, C, H, Cl) 
         }  else {
                 print("Input not correct, only PCA or PCO is allowed")
         }
         
-        # check chem_forms
-        # if (any(check_chemform(isotopes = isotopes, chemforms = data$Formula)$warning == TRUE)) {print("Warning: incorrect formula")} else {"All correct"}
         
         # adding ion modes to the data frame to be inserted to isopattern, only -1 or +1 allowed
         if (ion_modes == "-") {
@@ -37,106 +36,107 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                         mutate(Charge = as.integer(1))
         }
         
-        # generate input data for envipat based on fragment_ions
-        
+        ####################################################################       
+        ####### generate input data for envipat based on fragment_ions
+        ####################################################################         
         if (fragment_ions == "-Cl") { # Generate fragments M-Cl for each homolog formula  
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "-H") { # Generate fragments M-H for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "-HCl") { # Generate fragments M-HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
                         mutate(Adduct = adduct_ions) %>%
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Cl = Cl-1) %>%
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "+Cl") { # Generate fragments M+Cl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>%
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl+1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "-Cl-HCl") { # Generate fragments M-Cl-HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl-2) %>%
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "-Cl-2HCl") { # Generate fragments M-Cl2HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl-3) %>%
                         mutate(H = H-2) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "-Cl-3HCl") { # Generate fragments M-Cl-3HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl-4) %>%
                         mutate(H = H-3) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         } else if (fragment_ions == "-Cl-4HCl") { # Generate fragments M-Cl-3HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl-5) %>%
                         mutate(H = H-4) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
         }else if (fragment_ions == "-2Cl-HCl") { # Generate fragments M-2Cl-HCl for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>% 
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl-3) %>%
                         mutate(H = H-1) %>%
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl)
-
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
+                
         } else if (fragment_ions == "+Br") { # Generate fragments M+Br for each homolog formula
                 data <- data %>%
                         mutate(Parent = Formula) %>%
-                        mutate(Cl_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
+                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 0),
+                                                     group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 0))) %>%
                         mutate(Adduct = adduct_ions) %>%
                         mutate(Cl = Cl) %>%
                         mutate(Br = 1) |> 
                         mutate(Formula = paste0("C", C, "H", H, "Cl", Cl, "Br", Br)) %>%
-                        select(Parent, Cl_perc, Charge, Adduct, Formula, C, H, Cl, Br)
+                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl, Br)
         }
         
         # Remove formula without Cl after adduct formations
@@ -147,8 +147,10 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
         CP_allions <- list()
         data_ls <- list()
         
-        
-        # function to get isotopic patterns for all PCAs. Limit the threshold to 10%, neutral form. data("isotopes") needs to be loaded first
+        #################################################################### 
+        # function to get isotopic patterns for all PCAs. 
+        # data("isotopes") needs to be loaded in app.R
+        #################################################################### 
         getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, 
                                                         chemforms = x, 
                                                         threshold = threshold, 
@@ -156,12 +158,12 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                                         plotit = FALSE, 
                                                         charge = Charge)}
         
-        if (fragment_ions == "+Br") { 
+        if (fragment_ions == "+Br") { #this is for Br adduct
                 for (j in seq_along(data$Formula)) {
                         Formula <- data$Formula[j]
                         Parent <- data$Parent[j]
                         Charge <- data$Charge[j]
-                        Cl_perc <- data$Cl_perc[j]
+                        Halo_perc <- data$Halo_perc[j]
                         dat <- getisotopes(x = as.character(data$Formula[j]))
                         dat <- as.data.frame(dat[[1]])
                         dat <- dat %>% 
@@ -169,7 +171,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                 mutate(`m/z` = round(`m/z`, 6)) %>%
                                 mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`, "[79Br]", `79Br`, "[81Br]", `81Br`)) %>%
                                 mutate(Parent_Formula = Parent) %>%
-                                mutate(Cl_perc = Cl_perc) %>%
+                                mutate(Halo_perc = Halo_perc) %>%
                                 mutate(Adduct_Formula =  Formula) %>%
                                 mutate(Charge = Charge) %>%
                                 mutate(Isotopologue = case_when(
@@ -196,15 +198,15 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                         `13C` + (`37Cl`+`81Br`)*2 == 20 ~ "+20")) %>%
                                 mutate(Adduct = paste0(adduct_ions, " ", Isotopologue)) %>%
                                 rename(Rel_ab = abundance) %>%
-                                select(Parent_Formula, Cl_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, `79Br`, `81Br`)
+                                select(Parent_Formula, Halo_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, `79Br`, `81Br`)
                         data_ls[[j]] <- dat
                 }
-        }else {
+        }else { # for other adducts
                 for (j in seq_along(data$Formula)) {
                         Formula <- data$Formula[j]
                         Parent <- data$Parent[j]
                         Charge <- data$Charge[j]
-                        Cl_perc <- data$Cl_perc[j]
+                        Halo_perc <- data$Halo_perc[j]
                         dat <- getisotopes(x = as.character(data$Formula[j]))
                         dat <- as.data.frame(dat[[1]])
                         dat <- dat %>% 
@@ -212,7 +214,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                 mutate(`m/z` = round(`m/z`, 6)) %>%
                                 mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`)) %>%
                                 mutate(Parent_Formula = Parent) %>%
-                                mutate(Cl_perc = Cl_perc) %>%
+                                mutate(Halo_perc = Halo_perc) %>%
                                 mutate(Adduct_Formula =  Formula) %>%
                                 mutate(Charge = Charge) %>%
                                 mutate(Isotopologue = case_when(
@@ -239,7 +241,7 @@ getAdduct <- function(adduct_ions, C, Cl, threshold) {
                                         `13C` + (`37Cl`)*2 == 20 ~ "+20")) %>%
                                 mutate(Adduct = paste0(adduct_ions, " ", Isotopologue)) %>%
                                 rename(Rel_ab = abundance) %>%
-                                select(Parent_Formula, Cl_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+                                select(Parent_Formula, Halo_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
                         data_ls[[j]] <- dat
                 }
         }
