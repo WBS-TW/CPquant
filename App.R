@@ -9,6 +9,7 @@ library(plotly)
 library(DT)
 library(nnls)
 library(openxlsx)
+library(tidymodels)
 
 
 options(shiny.maxRequestSize = 15000 * 1024^2)
@@ -506,7 +507,7 @@ server <- function(input, output, session) {
                 #filter(Area >= removeAreas())
                 #mutate(Area = if_else(Area <= removeAreas(), 0, Area))
                 
-                
+                #browser()
                 CPs_standards <- Skyline_output_filt |> 
                         filter(`Sample Type` == "Standard",
                                Molecule != "IS",
@@ -518,7 +519,7 @@ server <- function(input, output, session) {
                         nest() |> 
                         mutate(models = map(data, ~lm(Area ~ `Analyte Concentration`, data = .x))) |> 
                         mutate(coef = map(models, coef)) |> 
-                        mutate(Response_factor = map(coef, pluck("`Analyte Concentration`"))) |> 
+                        mutate(Response_factor = map_dbl(models, ~ coef(.x)["`Analyte Concentration`"]))|> 
                         mutate(intercept = map(coef, pluck("(Intercept)"))) |> 
                         mutate(rsquared = map(models, summary)) |> 
                         mutate(rsquared = map(rsquared, pluck("r.squared"))) |>

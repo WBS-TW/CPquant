@@ -11,7 +11,7 @@ library(stringr)
 rm(list = ls()) 
 
 # Load the file
-TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDustb.xlsx") |>
+TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |>
         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) 
 
 # Replace missing values in the Response_factor column with 0
@@ -188,7 +188,7 @@ list_of_samples <- split(TESTINGB, TESTINGB$`Replicate Name`)
         
         # Combine all results into a single data frame
         Combinations <- do.call(cbind, SCCP_MCCP_combinations)
-     
+        
         
         # Store sum RFs for each group CP standard
         input <- input |> 
@@ -218,156 +218,155 @@ for (sample_name in 1:length(unique_sample_names)) {
         print(paste("Processing sample:", sample_name))
         
         
-####################################RUN PATTERN RECONSTRUCTION FOR SELECTED (LOADED) SAMPLE####################
-#This section follows the structure that was in the original script
-  
-
-######################################################If I prepare combinations in columns 1:3 for SCCPs and 4:6 for MCCPs#############################################
-####################################################Separating different  depending on conditioning #########################################
-## The script was made for quantifying one sample at the time, so I changed it to iterate for all the data frames of the samples
-
-# Initialize an empty list to store results for all samples
-all_results <- list()
-all_plots <- list()
-
-# Extract unique sample names, it will give the to each "data frame"
-unique_sample_names <- unique(TESTINGB$`Replicate Name`)
-
-# Iterate over each unique sample name
-for (sample_name in 1:length(unique_sample_names)) {
-        # Get the corresponding sample data frame, now I will use sample_df for further procesing
-        sample_df <- list_of_samples[[sample_name]]
+        ####################################RUN PATTERN RECONSTRUCTION FOR SELECTED (LOADED) SAMPLE####################
+        #This section follows the structure that was in the original script
         
-        # Set sample name, to see which samples it will calibrate
-        print(paste("Processing sample:", sample_name))
         
-        # Convert Type to factor and Normalized Area to numeric
+        ######################################################If I prepare combinations in columns 1:3 for SCCPs and 4:6 for MCCPs#############################################
+        ####################################################Separating different  depending on conditioning #########################################
+        ## The script was made for quantifying one sample at the time, so I changed it to iterate for all the data frames of the samples
         
-        sample_df <- sample_df |> 
-                mutate(
-                        Type = as.factor(Type),
-                        Chain_length = as.factor(Chain_length),
-                        `Normalized Area` = as.numeric(`Normalized Area`),
-                        Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE)
-                )
+        # Initialize an empty list to store results for all samples
+        all_results <- list()
+        all_plots <- list()
         
-        # Calculate relative 'Normalized Area' distribution within each homologue group
-        sample_df$Relative_distribution <- NA
-        sample_df$`Normalized Area`[is.na(sample_df$`Normalized Area`)] <- 0
+        # Extract unique sample names, it will give the to each "data frame"
+        unique_sample_names <- unique(TESTINGB$`Replicate Name`)
         
-        # Calculate relative 'Normalized Area' distribution within each homologue group in SCPPs and in MCCPs separately
-        sample_df <- sample_df  |>  
-                group_by(Type) |>  
-                mutate(Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE))
-        
-        results <- sample_df
-        results[c("Comp_1", "Comp_2", "Fraction_Comp_1", "Simulated_pattern")] <- NA
-        
-        #Type as factor in input
-        input <- input |> 
-                mutate(Type = as.factor(Type))
-        
-        # Deconvolution of homologue patterns
-        
-        for (i in 1:length(sample_df$Type)) {
-                REF <- sample_df$Relative_distribution[sample_df$Type == levels(sample_df$Type)[i]]
-                Distance <- 100
+        # Iterate over each unique sample name
+        for (sample_name in 1:length(unique_sample_names)) {
+                # Get the corresponding sample data frame, now I will use sample_df for further procesing
+                sample_df <- list_of_samples[[sample_name]]
                 
-                for (z in 1:length(Combinations[1, ])) { 
+                # Set sample name, to see which samples it will calibrate
+                print(paste("Processing sample:", sample_name))
+                
+                # Convert Type to factor and Normalized Area to numeric
+                
+                sample_df <- sample_df |> 
+                        mutate(
+                                Type = as.factor(Type),
+                                Chain_length = as.factor(Chain_length),
+                                `Normalized Area` = as.numeric(`Normalized Area`),
+                                Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE)
+                        )
+                
+                # Calculate relative 'Normalized Area' distribution within each homologue group
+                sample_df$Relative_distribution <- NA
+                sample_df$`Normalized Area`[is.na(sample_df$`Normalized Area`)] <- 0
+                
+                # Calculate relative 'Normalized Area' distribution within each homologue group in SCPPs and in MCCPs separately
+                sample_df <- sample_df  |>  
+                        group_by(Type) |>  
+                        mutate(Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE))
+                
+                results <- sample_df
+                results[c("Comp_1", "Comp_2", "Fraction_Comp_1", "Simulated_pattern")] <- NA
+                
+                #Type as factor in input
+                input <- input |> 
+                        mutate(Type = as.factor(Type))
+                
+                # Deconvolution of homologue patterns
+                
+                for (i in 1:length(sample_df$Type)) {
+                        REF <- sample_df$Relative_distribution[sample_df$Type == levels(sample_df$Type)[i]]
+                        Distance <- 100
                         
-                        C_1 <- subset(input, subset = (STD_code == Combinations[1, z] & Type == sample_df$Type[i]))
-                        C_2 <- subset(input, subset = (STD_code == Combinations[2, z] & Type == sample_df$Type[i]))
-                        
-                        for (j in 1:100) {
-                                Combo <- (C_1$Response_factor * j + C_2$Response_factor * (100 - j)) / sum((C_1$Response_factor * j + C_2$Response_factor * (100 - j)), na.rm = TRUE)
+                        for (z in 1:length(Combinations[1, ])) { 
                                 
-                                if (Distance > sum(sqrt((REF - Combo)^2))) {
-                                        results$Comp_1[results$Type == levels(sample_df$Type)[i]] <- as.character(C_1$STD_code)
-                                        results$Comp_2[results$Type == levels(sample_df$Type)[i]] <- as.character(C_2$STD_code)
-                                        results$Fraction_Comp_1[results$Type == levels(sample_df$Type)[i]] <- j
-                                        results$Simulated_pattern[results$Type == levels(sample_df$Type)[i]] <- Combo
-                                        Distance <- sum(sqrt((REF - Combo)^2))
+                                C_1 <- subset(input, subset = (STD_code == Combinations[1, z] & Type == sample_df$Type[i]))
+                                C_2 <- subset(input, subset = (STD_code == Combinations[2, z] & Type == sample_df$Type[i]))
+                                
+                                for (j in 1:100) {
+                                        Combo <- (C_1$Response_factor * j + C_2$Response_factor * (100 - j)) / sum((C_1$Response_factor * j + C_2$Response_factor * (100 - j)), na.rm = TRUE)
+                                        
+                                        if (Distance > sum(sqrt((REF - Combo)^2))) {
+                                                results$Comp_1[results$Type == levels(sample_df$Type)[i]] <- as.character(C_1$STD_code)
+                                                results$Comp_2[results$Type == levels(sample_df$Type)[i]] <- as.character(C_2$STD_code)
+                                                results$Fraction_Comp_1[results$Type == levels(sample_df$Type)[i]] <- j
+                                                results$Simulated_pattern[results$Type == levels(sample_df$Type)[i]] <- Combo
+                                                Distance <- sum(sqrt((REF - Combo)^2))
+                                        }
                                 }
                         }
                 }
-        }
-        
-        
-        # Calculate concentrations (ng per microliter)
-        results$RF_1st <- NA
-        results$RF_2nd <- NA
-        
-        for (i in 1:nrow(results)) {
-                results$RF_1st[i] <- input$Sum_response_factor[input$STD_code == results$Comp_1[i]]
-                results$RF_2nd[i] <- input$Sum_response_factor[input$STD_code == results$Comp_2[i]]
-        }
-        
-        results <- results |> 
-                mutate(
-                        RF_1st = as.numeric(RF_1st),
-                        RF_2nd = as.numeric(RF_2nd),
-                        Concentration = sum(`Normalized Area`) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
+                
+                
+                # Calculate concentrations (ng per microliter)
+                results$RF_1st <- NA
+                results$RF_2nd <- NA
+                
+                for (i in 1:nrow(results)) {
+                        results$RF_1st[i] <- input$Sum_response_factor[input$STD_code == results$Comp_1[i]]
+                        results$RF_2nd[i] <- input$Sum_response_factor[input$STD_code == results$Comp_2[i]]
+                }
+                
+                results <- results |> 
+                        mutate(
+                                RF_1st = as.numeric(RF_1st),
+                                RF_2nd = as.numeric(RF_2nd),
+                                Concentration = sum(`Normalized Area`) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
+                        )
+                
+                # Store the results for the current sample in the list
+                all_results[[sample_name]] <- results
+                
+                # Visualization of results
+                plot_table <- data.frame(
+                        Distribution = c(results$Relative_distribution, results$Simulated_pattern),
+                        Homologue = results$Homologue,
+                        Chain_length = results$Chain_length,
+                        Origin = rep(as.factor(c("Measured", "Simulated")), each = nrow(results))
                 )
-        
-        # Store the results for the current sample in the list
-        all_results[[sample_name]] <- results
-        
-        # Visualization of results
-        plot_table <- data.frame(
-                Distribution = c(results$Relative_distribution, results$Simulated_pattern),
-                Homologue = results$Homologue,
-                Chain_length = results$Chain_length,
-                Origin = rep(as.factor(c("Measured", "Simulated")), each = nrow(results))
-        )
-        
-        plot_table$Homologue <- factor(plot_table$Homologue, levels = unique(plot_table$Homologue))
-        
-        plot <- ggplot(plot_table, aes(x = Homologue, y = Distribution * 100, fill = Origin, colour = Origin)) +
-                geom_bar(stat = "identity", position = position_dodge(width = 0.9), width = 0.8, size = .4) +
-                theme(panel.background = element_blank()) +
-                scale_fill_manual(values = c("darkolivegreen3", "darkslategray4")) +
-                scale_color_manual(values = c("darkolivegreen4", "darkslategray")) +
-                ggtitle(label = paste(sample_name, " - Distribution of CP homologues")) +
-                theme(plot.title = element_text(size = 10, face = "bold", hjust = 0)) +
-                xlab("") + ylab("Relative `Normalized Area` distribution, %") +
-                theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-                theme(
-                        legend.key.size = unit(0.15, "in"),
-                        legend.text = element_text(size = 10),
-                        legend.title = element_text(size = 10),
-                        panel.background = element_rect(fill = "white"),
-                        panel.border = element_rect(fill = NA, colour = "grey20"),
-                        panel.grid.major.y = element_line(colour = "grey50"),
-                        panel.grid.minor.y = element_line(colour = "grey80"),
-                        panel.grid.major.x = element_blank(),
-                        legend.position = "bottom",
-                        strip.background = element_rect(fill = "grey20"),
-                        strip.text = element_text(colour = "white", face = "bold")
-                ) +
-                facet_wrap(. ~ Chain_length, scales = "free", nrow = 4, ncol = 4)
-        
-        # Store the plot for the current sample in the list
-        all_plots[[sample_name]] <- plot
-        
-        results_output_MCCPs <- results |> 
-                summarise(median(Concentration)) |> 
-                mutate(
-                        Type = results$Type[1],
-                        Sample = sample_name,
-                        Comment = paste("The best match:", results$Fraction_Comp_1[1], "% of ", results$Comp_1[1], " and ", 100 - results$Fraction_Comp_1[1], "% of ", results$Comp_2[1])
-                ) |> 
-                rename("Total concentration, ng/µL" = "median(Concentration)")
-        
-        # Combine results for all samples into a single dataframe
-        all_results_df_MCCPs <- bind_rows(all_results, .id = "Sample")
-        
-        # Print or further process the combined results dataframe
-        print(all_results_df_MCCPs)
-        # Print results output
-        #
-        print(results_output_MCCPs)
-        
-}
+                
+                plot_table$Homologue <- factor(plot_table$Homologue, levels = unique(plot_table$Homologue))
+                
+                plot <- ggplot(plot_table, aes(x = Homologue, y = Distribution * 100, fill = Origin, colour = Origin)) +
+                        geom_bar(stat = "identity", position = position_dodge(width = 0.9), width = 0.8, size = .4) +
+                        theme(panel.background = element_blank()) +
+                        scale_fill_manual(values = c("darkolivegreen3", "darkslategray4")) +
+                        scale_color_manual(values = c("darkolivegreen4", "darkslategray")) +
+                        ggtitle(label = paste(sample_name, " - Distribution of CP homologues")) +
+                        theme(plot.title = element_text(size = 10, face = "bold", hjust = 0)) +
+                        xlab("") + ylab("Relative `Normalized Area` distribution, %") +
+                        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+                        theme(
+                                legend.key.size = unit(0.15, "in"),
+                                legend.text = element_text(size = 10),
+                                legend.title = element_text(size = 10),
+                                panel.background = element_rect(fill = "white"),
+                                panel.border = element_rect(fill = NA, colour = "grey20"),
+                                panel.grid.major.y = element_line(colour = "grey50"),
+                                panel.grid.minor.y = element_line(colour = "grey80"),
+                                panel.grid.major.x = element_blank(),
+                                legend.position = "bottom",
+                                strip.background = element_rect(fill = "grey20"),
+                                strip.text = element_text(colour = "white", face = "bold")
+                        ) +
+                        facet_wrap(. ~ Chain_length, scales = "free", nrow = 4, ncol = 4)
+                
+                # Store the plot for the current sample in the list
+                all_plots[[sample_name]] <- plot
+                
+                results_output_MCCPs <- results |> 
+                        summarise(median(Concentration)) |> 
+                        mutate(
+                                Type = results$Type[1],
+                                Sample = sample_name,
+                                Comment = paste("The best match:", results$Fraction_Comp_1[1], "% of ", results$Comp_1[1], " and ", 100 - results$Fraction_Comp_1[1], "% of ", results$Comp_2[1])
+                        ) |> 
+                        rename("Total concentration, ng/µL" = "median(Concentration)")
+                
+                # Combine results for all samples into a single dataframe
+                all_results_df_MCCPs <- bind_rows(all_results, .id = "Sample")
+                
+                # Print or further process the combined results dataframe
+                print(all_results_df_MCCPs)
+                # Print results output
+                print(results_output_MCCPs)
+                
+        }
 }
 #########################################VIEW RESULTS############################################
 
