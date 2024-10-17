@@ -22,14 +22,14 @@ RECOVERY <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xl
         filter(`Isotope Label Type` == "Quan") |> 
         pivot_wider(id_cols = `Replicate Name`,
                     names_from = Molecule, # name of the new column
-                    values_from = `Normalized Area`) #name of the values for the new columns
+                    values_from = Area) #name of the values for the new columns
 
 
 ##########Filter and prepare the standards that we want to compare to, (I named them Std)
 Std<-RECOVERY|>  
         select(`Replicate Name`, IS, RS)|> #Select the columns that we need
         filter(str_detect(`Replicate Name`, "Std", negate = FALSE))|> #Select the standards
-        mutate(RatioStd = IS / RS) |> #Calculate the IS/RS `Normalized Area` for the standards 
+        mutate(RatioStd = IS / RS) |> #Calculate the IS/RS Area for the standards 
         summarize(AverageRatio = mean(RatioStd, na.rm = TRUE)) #Calculate the average of the three standards
 
 ##############Calculate the recovery
@@ -72,7 +72,7 @@ TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xls
 
 # Replace missing values in the Response_factor column with 0
 TESTING <- TESTING |> 
-        mutate(`Normalized Area` = replace_na(`Normalized Area`, 0))
+        mutate(Area = replace_na(Area, 0))
 
 # Function to create molecule names
 create_molecule_name <- function(i, j) {
@@ -111,11 +111,11 @@ for (i in i_values) {
                         filter(str_detect(Molecule, "C17", negate = TRUE)) #Exclude the calibration MCCPs 
                 
                 # Check if there are any non-NA cases in the filtered data
-                if (sum(!is.na(filtered_dataA$`Normalized Area`)) == 0 || sum(!is.na(filtered_dataA$`Analyte Concentration`)) == 0) {
+                if (sum(!is.na(filtered_dataA$Area)) == 0 || sum(!is.na(filtered_dataA$`Analyte Concentration`)) == 0) {
                         cat("No valid cases for fitting the model for molecule:", molecule_name, "\n")
                 } else {
                         # Fit linear model to the data
-                        lm_modelA <- lm(`Normalized Area` ~ `Analyte Concentration`, data = filtered_dataA)
+                        lm_modelA <- lm(Area ~ `Analyte Concentration`, data = filtered_dataA)
                         
                         # Extract slope and intercept from the model
                         slopeA <- coef(lm_modelA)[2]
@@ -148,14 +148,14 @@ for (i in i_values) {
                         
                         
                         # Create plot for the current molecule
-                        plotA <- ggplot(filtered_dataA, aes(x = `Analyte Concentration`, y = `Normalized Area`)) +
+                        plotA <- ggplot(filtered_dataA, aes(x = `Analyte Concentration`, y = Area)) +
                                 geom_point() +
                                 geom_smooth(method = "lm", 
                                             se = FALSE, 
                                             colour = "orange",
                                             size = 1) +
                                 theme_classic() +
-                                ylab("`Normalized Area`") +
+                                ylab("Area") +
                                 ggtitle(paste("Molecule:", molecule_name))
                         
                         # Store the plot in the list
@@ -183,7 +183,7 @@ calibration_curves_gridA
 
 # Replace missing values in the Response_factor column with 0
 TESTING <- TESTING |> 
-        mutate(`Normalized Area` = replace_na(`Normalized Area`, 0)) 
+        mutate(Area = replace_na(Area, 0)) 
 
 # Function to create molecule names
 create_molecule_name <- function(i, j) {
@@ -222,11 +222,11 @@ for (i in i_values) {
                         filter(str_detect(Molecule, "C17", negate = TRUE)) #Exclude the calibration MCCPs
                 
                 # Check if there are any non-NA cases in the filtered data
-                if (sum(!is.na(filtered_dataB$`Normalized Area`)) == 0 || sum(!is.na(filtered_dataB$`Analyte Concentration`)) == 0) {
+                if (sum(!is.na(filtered_dataB$Area)) == 0 || sum(!is.na(filtered_dataB$`Analyte Concentration`)) == 0) {
                         cat("No valid cases for fitting the model for molecule:", molecule_name, "\n")
                 } else {
                         # Fit linear model to the data
-                        lm_modelB <- lm(`Normalized Area` ~ `Analyte Concentration`, data = filtered_dataB)
+                        lm_modelB <- lm(Area ~ `Analyte Concentration`, data = filtered_dataB)
                         
                         # Extract slope and intercept from the model
                         slopeB <- coef(lm_modelB)[2]
@@ -259,14 +259,14 @@ for (i in i_values) {
                         
                         
                         # Create plot for the current molecule
-                        plotB <- ggplot(filtered_dataB, aes(x = `Analyte Concentration`, y = `Normalized Area`)) +
+                        plotB <- ggplot(filtered_dataB, aes(x = `Analyte Concentration`, y = Area)) +
                                 geom_point() +
                                 geom_smooth(method = "lm", 
                                             se = FALSE, 
                                             colour = "purple",
                                             size = 1) +
                                 theme_classic() +
-                                ylab("`Normalized Area`") +
+                                ylab("Area") +
                                 ggtitle(paste("Molecule:", molecule_name))
                         
                         # Store the plot in the list
@@ -301,7 +301,7 @@ combined_df <- rbind(calibration_resultsA, calibration_resultsB)
 TESTINGB <- TESTING |> 
         filter(`Isotope Label Type` == "Quan") |> 
         mutate(
-                `Normalized Area` = as.numeric(`Normalized Area`),
+                Area = as.numeric(Area),
                 Chain_length = paste("C", sub(".*-C(9|10|11|12|13|14|15|16|17)$", "\\1", `Molecule List`)), #Create the columns that contains the chain length as for example C10 or C11 or C12 etc.
                 type = ifelse(
                         Chain_length >= 10 & Chain_length <= 13, "SCCPs",
@@ -377,14 +377,14 @@ for (sample_name in unique_sample_names) {
         sample_df <- sample_df |> 
                 mutate(
                         Chain_length = as.factor(Chain_length),
-                        `Normalized Area` = as.numeric(`Normalized Area`),
-                        Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE)
+                        Area = as.numeric(Area),
+                        Relative_distribution = Area / sum(Area, na.rm = TRUE)
                 )
         
-        # Calculate relative `Normalized Area` distribution within each homologue group
+        # Calculate relative Area distribution within each homologue group
         sample_df$Relative_distribution <- NA
-        sample_df$`Normalized Area`[is.na(sample_df$`Normalized Area`)] <- 0
-        sample_df <- sample_df |>  mutate(Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE))
+        sample_df$Area[is.na(sample_df$Area)] <- 0
+        sample_df <- sample_df |>  mutate(Relative_distribution = Area / sum(Area, na.rm = TRUE))
         results <- sample_df
         results[c("Comp_1", "Comp_2", "Fraction_Comp_1", "Simulated_pattern")] <- NA
         
@@ -424,7 +424,7 @@ for (sample_name in unique_sample_names) {
                 mutate(
                         RF_1st = as.numeric(RF_1st),
                         RF_2nd = as.numeric(RF_2nd),
-                        Concentration = sum(`Normalized Area`) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
+                        Concentration = sum(Area) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
                 )
         
         # Store the results for the current sample in the list
@@ -447,7 +447,7 @@ for (sample_name in unique_sample_names) {
                 scale_color_manual(values = c("darkolivegreen4", "darkslategray")) +
                 ggtitle(label = paste(sample_name, " - Distribution of CP homologues")) +
                 theme(plot.title = element_text(size = 10, face = "bold", hjust = 0)) +
-                xlab("") + ylab("Relative `Normalized Area` distribution, %") +
+                xlab("") + ylab("Relative Area distribution, %") +
                 theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
                 theme(
                         legend.key.size = unit(0.15, "in"),
@@ -513,7 +513,7 @@ TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xls
 
 # Replace missing values in the Response_factor column with 0
 TESTING <- TESTING |> 
-        mutate(`Normalized Area` = replace_na(`Normalized Area`, 0))
+        mutate(Area = replace_na(Area, 0))
 
 # Function to create molecule names
 create_molecule_name <- function(i, j) {
@@ -552,11 +552,11 @@ for (i in i_values) {
                         filter(str_detect(Molecule, "C13", negate = TRUE)) #Exclude the calibration SCCPs 
                 
                 # Check if there are any non-NA cases in the filtered data
-                if (sum(!is.na(filtered_dataA$`Normalized Area`)) == 0 || sum(!is.na(filtered_dataA$`Analyte Concentration`)) == 0) {
+                if (sum(!is.na(filtered_dataA$Area)) == 0 || sum(!is.na(filtered_dataA$`Analyte Concentration`)) == 0) {
                         cat("No valid cases for fitting the model for molecule:", molecule_name, "\n")
                 } else {
                         # Fit linear model to the data
-                        lm_modelA <- lm(`Normalized Area` ~ `Analyte Concentration`, data = filtered_dataA)
+                        lm_modelA <- lm(Area ~ `Analyte Concentration`, data = filtered_dataA)
                         
                         # Extract slope and intercept from the model
                         slopeA <- coef(lm_modelA)[2]
@@ -589,14 +589,14 @@ for (i in i_values) {
                         
                         
                         # Create plot for the current molecule
-                        plotA <- ggplot(filtered_dataA, aes(x = `Analyte Concentration`, y = `Normalized Area`)) +
+                        plotA <- ggplot(filtered_dataA, aes(x = `Analyte Concentration`, y = Area)) +
                                 geom_point() +
                                 geom_smooth(method = "lm", 
                                             se = FALSE, 
                                             colour = "orange",
                                             size = 1) +
                                 theme_classic() +
-                                ylab("`Normalized Area`") +
+                                ylab("Area") +
                                 ggtitle(paste("Molecule:", molecule_name))
                         
                         # Store the plot in the list
@@ -624,7 +624,7 @@ calibration_curves_gridA
 
 # Replace missing values in the Response_factor column with 0
 TESTING <- TESTING |> 
-        mutate(`Normalized Area` = replace_na(`Normalized Area`, 0)) 
+        mutate(Area = replace_na(Area, 0)) 
 
 # Function to create molecule names
 create_molecule_name <- function(i, j) {
@@ -663,11 +663,11 @@ for (i in i_values) {
                         filter(str_detect(Molecule, "C13", negate = TRUE)) #Exclude the calibration SCCPs 
                 
                 # Check if there are any non-NA cases in the filtered data
-                if (sum(!is.na(filtered_dataB$`Normalized Area`)) == 0 || sum(!is.na(filtered_dataB$`Analyte Concentration`)) == 0) {
+                if (sum(!is.na(filtered_dataB$Area)) == 0 || sum(!is.na(filtered_dataB$`Analyte Concentration`)) == 0) {
                         cat("No valid cases for fitting the model for molecule:", molecule_name, "\n")
                 } else {
                         # Fit linear model to the data
-                        lm_modelB <- lm(`Normalized Area` ~ `Analyte Concentration`, data = filtered_dataB)
+                        lm_modelB <- lm(Area ~ `Analyte Concentration`, data = filtered_dataB)
                         
                         # Extract slope and intercept from the model
                         slopeB <- coef(lm_modelB)[2]
@@ -700,14 +700,14 @@ for (i in i_values) {
                         
                         
                         # Create plot for the current molecule
-                        plotB <- ggplot(filtered_dataB, aes(x = `Analyte Concentration`, y = `Normalized Area`)) +
+                        plotB <- ggplot(filtered_dataB, aes(x = `Analyte Concentration`, y = Area)) +
                                 geom_point() +
                                 geom_smooth(method = "lm", 
                                             se = FALSE, 
                                             colour = "purple",
                                             size = 1) +
                                 theme_classic() +
-                                ylab("`Normalized Area`") +
+                                ylab("Area") +
                                 ggtitle(paste("Molecule:", molecule_name))
                         
                         # Store the plot in the list
@@ -742,7 +742,7 @@ combined_df <- rbind(calibration_resultsA, calibration_resultsB)
 TESTINGB <- TESTING |> 
         filter(`Isotope Label Type` == "Quan") |> 
         mutate(
-                `Normalized Area` = as.numeric(`Normalized Area`),
+                Area = as.numeric(Area),
                 Chain_length = paste("C", sub(".*-C(9|10|11|12|13|14|15|16|17)$", "\\1", `Molecule List`)), #Create the columns that contains the chain length as for example C10 or C11 or C12 etc.
                 type = ifelse(
                         Chain_length >= 10 & Chain_length <= 13, "SCCPs",
@@ -818,14 +818,14 @@ for (sample_name in unique_sample_names) {
         sample_df <- sample_df |> 
                 mutate(
                         Chain_length = as.factor(Chain_length),
-                        `Normalized Area` = as.numeric(`Normalized Area`),
-                        Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE)
+                        Area = as.numeric(Area),
+                        Relative_distribution = Area / sum(Area, na.rm = TRUE)
                 )
         
-        # Calculate relative `Normalized Area` distribution within each homologue group
+        # Calculate relative Area distribution within each homologue group
         sample_df$Relative_distribution <- NA
-        sample_df$`Normalized Area`[is.na(sample_df$`Normalized Area`)] <- 0
-        sample_df <- sample_df |>  mutate(Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE))
+        sample_df$Area[is.na(sample_df$Area)] <- 0
+        sample_df <- sample_df |>  mutate(Relative_distribution = Area / sum(Area, na.rm = TRUE))
         results <- sample_df
         results[c("Comp_1", "Comp_2", "Fraction_Comp_1", "Simulated_pattern")] <- NA
         
@@ -865,7 +865,7 @@ for (sample_name in unique_sample_names) {
                 mutate(
                         RF_1st = as.numeric(RF_1st),
                         RF_2nd = as.numeric(RF_2nd),
-                        Concentration = sum(`Normalized Area`) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
+                        Concentration = sum(Area) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
                 )
         
         # Store the results for the current sample in the list
@@ -888,7 +888,7 @@ for (sample_name in unique_sample_names) {
                 scale_color_manual(values = c("darkolivegreen4", "darkslategray")) +
                 ggtitle(label = paste(sample_name, " - Distribution of CP homologues")) +
                 theme(plot.title = element_text(size = 10, face = "bold", hjust = 0)) +
-                xlab("") + ylab("Relative `Normalized Area` distribution, %") +
+                xlab("") + ylab("Relative Area distribution, %") +
                 theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
                 theme(
                         legend.key.size = unit(0.15, "in"),
@@ -950,10 +950,10 @@ combined_RESULTS <- rbind(all_results_df_SCCPs, all_results_df_MCCPs)
 
 
 ##############################################################################################################
-################################ NORMALIZE THE `Normalized Area` #####################################################
+################################ NORMALIZE THE Area #####################################################
 #############################################################################################################
 
-###I think it would be better if we normalize the `Normalized Area` in Skyline, so it is easier to decide which labeled standard to use for each homologue etc. 
+###I think it would be better if we normalize the Area in Skyline, so it is easier to decide which labeled standard to use for each homologue etc. 
 
 #Load the file
 #GC_qToF_CPsFoodResults<-read_excel("F:/OREBRO/CP analysis/Food project/Result/Skyline/GC_qToF_CPsFoodResults.xlsx")
@@ -963,7 +963,7 @@ combined_RESULTS <- rbind(all_results_df_SCCPs, all_results_df_MCCPs)
 #filter(Quantitative == "YES") |> 
 #pivot_wider(id_cols = `Replicate Name`,
 #names_from = Molecule, # name of the new column
-#values_from = `Normalized Area` #name of the values for the new columns
+#values_from = Area #name of the values for the new columns
 #) #data type       
 
 #Make the data in the data frame numeric
@@ -971,8 +971,8 @@ combined_RESULTS <- rbind(all_results_df_SCCPs, all_results_df_MCCPs)
 #GC_qToF_CPsFoodResultsB <- mutate_at(GC_qToF_CPsFoodResultsB, vars(matches(pattern)), as.numeric) # Apply as.numeric() to columns matching the pattern
 #GC_qToF_CPsFoodResultsB$IS = as.numeric(GC_qToF_CPsFoodResultsB$IS)# Define the IS as numeric 
 
-#Divide the `Normalized Area` of the homologues by the IS
-#Corrected`Normalized Area` <- mutate_at(GC_qToF_CPsFoodResultsB, vars(matches(pattern)), 
+#Divide the Area of the homologues by the IS
+#CorrectedArea <- mutate_at(GC_qToF_CPsFoodResultsB, vars(matches(pattern)), 
 #~ #. / GC_qToF_CPsFoodResultsB$IS) #It will now do it for all the columns that have the pattern (start the name with "C")
 
 

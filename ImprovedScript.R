@@ -11,7 +11,7 @@ library(stringr)
 rm(list = ls()) 
 
 # Load the file
-TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |>
+TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDustb.xlsx") |>
         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) 
 
 # Replace missing values in the Response_factor column with 0
@@ -377,3 +377,4 @@ print(all_results_df_MCCPs)
 all_plots[["NIST_R1"]]
 all_plots[["NIST_R2"]]
 all_plots[["NIST_R3"]]
+
