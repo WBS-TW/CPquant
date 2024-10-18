@@ -13,7 +13,6 @@ library(openxlsx)
 
 options(shiny.maxRequestSize = 15000 * 1024^2)
 
-
 # UI
 ui <- shiny::navbarPage("Quantification by deconvolution from Skyline output",
                         shiny::tabPanel("Quantification Inputs", 
