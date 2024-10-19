@@ -9,7 +9,7 @@ library(plotly)
 library(DT)
 library(nnls)
 library(openxlsx)
-library(tidymodels)
+
 
 
 options(shiny.maxRequestSize = 15000 * 1024^2)
@@ -519,7 +519,7 @@ server <- function(input, output, session) {
                         nest() |> 
                         mutate(models = map(data, ~lm(Area ~ `Analyte Concentration`, data = .x))) |> 
                         mutate(coef = map(models, coef)) |> 
-                        mutate(Response_factor = map_dbl(models, ~ coef(.x)["`Analyte Concentration`"]))|> 
+                        mutate(Response_factor = map_dbl(models, ~ coef(.x)["`Analyte Concentration`"]))|> #get the slope
                         mutate(intercept = map(coef, pluck("(Intercept)"))) |> 
                         mutate(rsquared = map(models, summary)) |> 
                         mutate(rsquared = map(rsquared, pluck("r.squared"))) |>
@@ -558,19 +558,24 @@ server <- function(input, output, session) {
                 
               
                 
-                CPs_samples <- Skyline_output_filt |> 
-                        filter(`Sample Type` %in% c("Unknown", "Blank"),
+                CPs_samples <- Skyline_output() |>  # Call the reactive with ()
+                        filter(`Sample Type` == "Unknown",
                                Molecule != "IS",
                                Molecule != "RS",
                                `Isotope Label Type` == "Quan") |> 
-                        mutate(Chain_length = paste0("C", str_extract(Molecule, "(?<=C)[^H]+"))) |> 
-                        #filter(Chain_length == "C10" | Chain_length == "C11" | Chain_length == "C12" | Chain_length == "C13") |> #this will be remove later or added as arg in fn
-                        group_by(`Replicate Name`) |> 
+                        mutate(Chain_length = str_extract(Molecule, "(?<=C)[^H]+") |> as.numeric()) |>  # Extract number after "C"
+                        mutate(Group = case_when(
+                                Chain_length >= 10 & Chain_length <= 13 ~ "S",  # Group S for 10-13
+                                Chain_length >= 14 & Chain_length <= 17 ~ "M",  # Group M for 14-17
+                                Chain_length >= 18 & Chain_length <= 30 ~ "L",  # Group L for 18-30
+                                TRUE ~ "Unknown"  # Default case
+                        )) |> 
+                        group_by(`Replicate Name`, Group) |>  # Group by Replicate Name and Group
                         mutate(Relative_distribution = Area / sum(Area, na.rm = TRUE)) |> 
-                        select(Molecule, Area, Relative_distribution) |> 
-                        mutate(across(Relative_distribution, ~replace(., is.nan(.), 0))) |>    #replace NaN with zero
-                        #nest() |> 
-                        ungroup()
+                        ungroup() |>  # Ungroup before dropping the Group column
+                        select(-Group) |>  # Explicitly remove Group column
+                        select(`Replicate Name`, Molecule, Area, Relative_distribution) |>
+                        mutate(across(Relative_distribution, ~replace(., is.nan(.), 0)))  # Replace NaN with zero
                 
                 
                 CPs_standards_input <- CPs_standards |> 

@@ -11,12 +11,12 @@ library(stringr)
 rm(list = ls()) 
 
 # Load the file
-TESTING <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |>
+TESTING <- read_excel("F:/LINKOPING/CP analysis/Samples_From_Orebro/Skyline/ResultsFromSkyline_NewSetting_ALLsamplesb.xlsx") |>
         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) 
 
 # Replace missing values in the Response_factor column with 0
 TESTING <- TESTING |> 
-        mutate(`Normalized Area` = ifelse(is.na(`Normalized Area`), 0, `Normalized Area`))  # Replace NAs with 0
+        mutate(Area = ifelse(is.na(Area), 0, Area))  # Replace NAs with 0
 
 
 ##############################################################################################################
@@ -71,7 +71,7 @@ for (std_name in unique_std_names) {
                 molecule_df <- list_of_molecule[[molecule_name]]
                 
                 # Build calibration curves
-                cal <- lm(`Normalized Area` ~ `Analyte Concentration`, data = molecule_df)
+                cal <- lm(Area ~ `Analyte Concentration`, data = molecule_df)
                 
                 # Identify the carbon length and the chlorine content
                 # Use a regular expression to extract the number of carbon atoms
@@ -89,7 +89,9 @@ for (std_name in unique_std_names) {
                 j <- chlorine_count
                 
                 # Determine the type based on the value of i
-                if (i >= 10 && i <= 13) {
+                if (is.na(i)) {
+                        type <- "Unknown"  # Assign "Unknown" if i is NA
+                } else if (i >= 10 && i <= 13) {
                         type <- "SCCPs"
                 } else if (i >= 14 && i <= 17) {
                         type <- "MCCPs"
@@ -98,6 +100,7 @@ for (std_name in unique_std_names) {
                 } else {
                         type <- "Unknown"
                 }
+                
                 
                 # Construct the Reference_standard
                 replicate_name <- unique(molecule_df$`Replicate Name`)
@@ -135,7 +138,7 @@ cal_results
 TESTINGB <- TESTING |> 
         filter(`Isotope Label Type` == "Quan") |> 
         mutate(
-                `Normalized Area` = as.numeric(`Normalized Area`),
+                Area = as.numeric(Area),
                 Chain_length = str_extract(`Molecule List`, "C\\d+"),
                 Carbon_number = as.numeric(str_remove(Chain_length, "C")),
                 Type = case_when(
@@ -217,7 +220,7 @@ for (sample_name in 1:length(unique_sample_names)) {
         # Set sample name, to see which samples it will calibrate
         print(paste("Processing sample:", sample_name))
         
-        
+}
         ####################################RUN PATTERN RECONSTRUCTION FOR SELECTED (LOADED) SAMPLE####################
         #This section follows the structure that was in the original script
         
@@ -247,18 +250,18 @@ for (sample_name in 1:length(unique_sample_names)) {
                         mutate(
                                 Type = as.factor(Type),
                                 Chain_length = as.factor(Chain_length),
-                                `Normalized Area` = as.numeric(`Normalized Area`),
-                                Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE)
+                                Area = as.numeric(Area),
+                                Relative_distribution = Area / sum(Area, na.rm = TRUE)
                         )
                 
                 # Calculate relative 'Normalized Area' distribution within each homologue group
                 sample_df$Relative_distribution <- NA
-                sample_df$`Normalized Area`[is.na(sample_df$`Normalized Area`)] <- 0
+                sample_df$Area[is.na(sample_df$Area)] <- 0
                 
                 # Calculate relative 'Normalized Area' distribution within each homologue group in SCPPs and in MCCPs separately
                 sample_df <- sample_df  |>  
                         group_by(Type) |>  
-                        mutate(Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE))
+                        mutate(Relative_distribution = Area / sum(Area, na.rm = TRUE))
                 
                 results <- sample_df
                 results[c("Comp_1", "Comp_2", "Fraction_Comp_1", "Simulated_pattern")] <- NA
@@ -266,31 +269,54 @@ for (sample_name in 1:length(unique_sample_names)) {
                 #Type as factor in input
                 input <- input |> 
                         mutate(Type = as.factor(Type))
+        
                 
                 # Deconvolution of homologue patterns
-                
-                for (i in 1:length(sample_df$Type)) {
-                        REF <- sample_df$Relative_distribution[sample_df$Type == levels(sample_df$Type)[i]]
-                        Distance <- 100
+                #browser()
+                for (i in 1:length(levels(sample_df$Type))) {
+                        # Store the type for the current iteration of i
+                        current_type <- levels(sample_df$Type)[i]
                         
-                        for (z in 1:length(Combinations[1, ])) { 
+                        for (i in 1:length(levels(sample_df$Type))) {
+                                # Store the type for the current iteration of i
+                                current_type <- levels(sample_df$Type)[i]
                                 
-                                C_1 <- subset(input, subset = (STD_code == Combinations[1, z] & Type == sample_df$Type[i]))
-                                C_2 <- subset(input, subset = (STD_code == Combinations[2, z] & Type == sample_df$Type[i]))
+                                # Subset the reference based on the current type
+                                REF <- sample_df$Relative_distribution[sample_df$Type == current_type]
+                                Distance <- 100
                                 
-                                for (j in 1:100) {
-                                        Combo <- (C_1$Response_factor * j + C_2$Response_factor * (100 - j)) / sum((C_1$Response_factor * j + C_2$Response_factor * (100 - j)), na.rm = TRUE)
+                                for (z in 1:length(Combinations[1, ])) { 
+                                        # Subset C_1 and C_2 based on the same current type
+                                        C_1 <- subset(input, subset = (STD_code == Combinations[1, z] & Type == current_type))
+                                        C_2 <- subset(input, subset = (STD_code == Combinations[2, z] & Type == current_type))
                                         
-                                        if (Distance > sum(sqrt((REF - Combo)^2))) {
-                                                results$Comp_1[results$Type == levels(sample_df$Type)[i]] <- as.character(C_1$STD_code)
-                                                results$Comp_2[results$Type == levels(sample_df$Type)[i]] <- as.character(C_2$STD_code)
-                                                results$Fraction_Comp_1[results$Type == levels(sample_df$Type)[i]] <- j
-                                                results$Simulated_pattern[results$Type == levels(sample_df$Type)[i]] <- Combo
-                                                Distance <- sum(sqrt((REF - Combo)^2))
+                                        # Only proceed if both C_1 and C_2 are not empty
+                                        if (nrow(C_1) > 0 && nrow(C_2) > 0) {
+                                                for (j in 1:100) {
+                                                        # Calculate the combination pattern
+                                                        Combo <- (C_1$Response_factor * j + C_2$Response_factor * (100 - j)) / 
+                                                                sum((C_1$Response_factor * j + C_2$Response_factor * (100 - j)), na.rm = TRUE)
+                                                        
+                                                        # Calculate the distance
+                                                        current_distance <- sum(sqrt((REF - Combo)^2), na.rm = TRUE)
+                                                        
+                                                        # Compare distance and update results if the new distance is smaller
+                                                        if (!is.na(current_distance) && Distance > current_distance) {
+                                                                results$Comp_1[results$Type == current_type] <- as.character(C_1$STD_code)
+                                                                results$Comp_2[results$Type == current_type] <- as.character(C_2$STD_code)
+                                                                results$Fraction_Comp_1[results$Type == current_type] <- j
+                                                                results$Simulated_pattern[results$Type == current_type] <- Combo
+                                                                Distance <- current_distance
+                                                        }
+                                                }
+                                        } else {
+                                                # Optionally print a warning or handle the case where C_1 or C_2 are empty
+                                                warning(paste("No matching rows for Combinations", Combinations[1, z], "or", Combinations[2, z], "for Type", current_type))
                                         }
                                 }
-                        }
-                }
+                        
+                }   
+                      
                 
                 
                 # Calculate concentrations (ng per microliter)
@@ -306,7 +332,7 @@ for (sample_name in 1:length(unique_sample_names)) {
                         mutate(
                                 RF_1st = as.numeric(RF_1st),
                                 RF_2nd = as.numeric(RF_2nd),
-                                Concentration = sum(`Normalized Area`) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
+                                Concentration = sum(Area) / (RF_1st * (Fraction_Comp_1 / 100) + RF_2nd * ((100 - Fraction_Comp_1) / 100))
                         )
                 
                 # Store the results for the current sample in the list
@@ -329,7 +355,7 @@ for (sample_name in 1:length(unique_sample_names)) {
                         scale_color_manual(values = c("darkolivegreen4", "darkslategray")) +
                         ggtitle(label = paste(sample_name, " - Distribution of CP homologues")) +
                         theme(plot.title = element_text(size = 10, face = "bold", hjust = 0)) +
-                        xlab("") + ylab("Relative `Normalized Area` distribution, %") +
+                        xlab("") + ylab("Relative Area distribution, %") +
                         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
                         theme(
                                 legend.key.size = unit(0.15, "in"),
@@ -372,6 +398,11 @@ for (sample_name in 1:length(unique_sample_names)) {
 
 #View Overview
 print(all_results_df_MCCPs)
+
+library(writexl)
+write_xlsx(all_results_df_MCCPs, "F:/LINKOPING/Manuscripts/Skyline/Skyline/all_results_df_MCCPs.xlsx")
+
+
 
 #View graph, REPLACE THE NAME OF THE SAMPLE YOU WANT TO SEE, another option is to open the list from the Environment and from there open each plot
 all_plots[["NIST_R1"]]

@@ -21,17 +21,18 @@ library(openxlsx)
 #filter(rsquared > 0.7) #cannot do this as some are still false positive and need to replace formula later with 0 for nnls 
 
 # NEED TO ADD using case_when or elseif..
-# if (sum(!is.na(filtered_dataA$`Normalized Area`)) == 0 || sum(!is.na(filtered_dataA$`Analyte Concentration`)) == 0) {
+# if (sum(!is.na(filtered_dataA$Area)) == 0 || sum(!is.na(filtered_dataA$`Analyte Concentration`)) == 0) {
 #       cat("No valid cases for fitting the model for molecule:", molecule_name, "\n")
 # OR add a filter to remove those rsquared that are very low (perhaps below 0.7?)  
 
 ##############
 
 # reading data from excel
-Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |>
+Skyline_output <- read_excel("F:/LINKOPING/CP analysis/Samples_From_Orebro/Skyline/ResultsFromSkyline_NewSetting_ALLsamplesb.xlsx") |> 
+#Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |> 
         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) |> 
-        mutate(`Normalized Area` = as.numeric(`Normalized Area`)) |> 
-        mutate(`Normalized Area` = replace_na(`Normalized Area`, 0)) |> # Replace missing values in the Response_factor column with 0
+        mutate(Area = as.numeric(Area)) |> 
+        mutate(Area = replace_na(Area, 0)) |> # Replace missing values in the Response_factor column with 0
         mutate(Area = replace_na(Area, 0)) |>
         mutate(RatioQuanToQual = as.numeric(RatioQuanToQual)) |> #--< convert to numeric #-->
         mutate(RatioQualToQuan = as.numeric(RatioQualToQuan)) #--< convert to numeric #-->
@@ -45,9 +46,9 @@ CPs_standards <- Skyline_output |>
                `Isotope Label Type` == "Quan",
                Note != "NA") |> 
         group_by(Note, Molecule) |>
-        mutate(rel_int = `Normalized Area`/sum(`Normalized Area`)) |> #why ius it needed? Maybe can be removed
+        mutate(rel_int = Area/sum(Area)) |> #why ius it needed? Maybe can be removed
         nest() |> 
-        mutate(models = map(data, ~lm(`Normalized Area` ~ `Analyte Concentration`, data = .x))) |> 
+        mutate(models = map(data, ~lm(Area ~ `Analyte Concentration`, data = .x))) |> 
         mutate(coef = map(models, coef)) |> 
         mutate(Response_factor = map(coef, pluck("`Analyte Concentration`"))) |> 
         mutate(intercept = map(coef, pluck("(Intercept)"))) |> 
@@ -71,14 +72,22 @@ CPs_samples <- Skyline_output |>
                Molecule != "IS",
                Molecule != "RS",
                `Isotope Label Type` == "Quan") |> 
-        mutate(Chain_length = paste0("C", str_extract(Molecule, "(?<=C)[^H]+"))) |> 
-        #filter(Chain_length == "C10" | Chain_length == "C11" | Chain_length == "C12" | Chain_length == "C13") |> #this will be remove later or added as arg in fn
-        group_by(`Replicate Name`) |> 
-        mutate(Relative_distribution = `Normalized Area` / sum(`Normalized Area`, na.rm = TRUE)) |> 
-        select(Molecule, `Normalized Area`, Relative_distribution) |> 
-        mutate(across(Relative_distribution, ~replace(., is.nan(.), 0))) |>    #replace NaN with zero
-        #nest() |> 
-        ungroup() 
+        mutate(Chain_length = str_extract(Molecule, "(?<=C)[^H]+") |> as.numeric()) |>  # Extract number after "C"
+        mutate(Group = case_when(
+                Chain_length >= 10 & Chain_length <= 13 ~ "S",  # Group S for 10-13
+                Chain_length >= 14 & Chain_length <= 17 ~ "M",  # Group M for 14-17
+                Chain_length >= 18 & Chain_length <= 30 ~ "L",  # Group L for 18-30
+                TRUE ~ "Unknown"  # Default case
+        )) |> 
+        group_by(`Replicate Name`, Group) |>  # Group by Replicate Name and Group
+        mutate(Relative_distribution = Area / sum(Area, na.rm = TRUE)) |> 
+        ungroup() |>  # Ungroup before dropping the Group column
+        select(-Group) |>  # Explicitly remove Group column
+        select(`Replicate Name`, Molecule, Area, Relative_distribution) |>
+        mutate(across(Relative_distribution, ~replace(., is.nan(.), 0)))  # Replace NaN with zero
+
+
+
 
 CPs_standards_input <- CPs_standards |> 
         select(Molecule, Note, Response_factor) |> 
@@ -103,7 +112,7 @@ combined_matrix <- CPs_standards_input  |>
 # Ensure combined_sample is correctly defined with nested data frames prior to the deconvolution
 combined_sample <- CPs_samples  |> 
         group_by(`Replicate Name`) |> 
-        select(-Molecule, -`Normalized Area`) |> 
+        select(-Molecule, -Area) |> 
         nest() |> 
         ungroup()
 
@@ -118,11 +127,20 @@ perform_deconvolution <- function(df, combined_matrix) {
                 stop("Dimensions of combined_matrix and df are incompatible.")
         }
         
-        # Reshape df_matrix if it has only one column 
+        # Reshape df_matrix if it has only one column or extract the first column if it has multiple
         if (ncol(df_matrix) == 1) { 
                 df_vector <- as.vector(df_matrix)
         } else {
-                df_vector <- df_matrix
+                df_vector <- as.vector(df_matrix[, 1])  # Extract the first column for nnls
+        }
+        
+        # Check for NA/NaN/Inf values in df_vector and combined_matrix
+        if (any(is.na(df_vector)) || any(is.nan(df_vector)) || any(is.infinite(df_vector))) {
+                stop("df_vector contains NA/NaN/Inf values.")
+        }
+        
+        if (any(is.na(combined_matrix)) || any(is.nan(combined_matrix)) || any(is.infinite(combined_matrix))) {
+                stop("combined_matrix contains NA/NaN/Inf values.")
         }
         
         # Perform nnls
@@ -149,6 +167,7 @@ perform_deconvolution <- function(df, combined_matrix) {
         ))
 }
 
+
 # Apply the perform_deconvolution function to each nested data frame
 Deconvolution <- combined_sample  |> 
         mutate(result = map(data, ~ perform_deconvolution(.x, combined_matrix)))
@@ -164,144 +183,98 @@ print(deconv_coef_df)
 
 
 ########################################################## Calculate the concentration in ng/uL ###############################################################
+#Calculate the response of the standards
 
 #Remove the replicate name to generate vectors:
 deconv_coef_df_matrix<- deconv_coef_df |> 
         select(-`Replicate Name`)
 
-# Initialize an empty list to store results
-result_list <- list()
-
-# Iterate through each row of deconv_coef_df_matrix
-for (i in 1:nrow(deconv_coef_df_matrix)) {
+        # Initialize an empty vector to store the summed results
+        sum_results <- numeric(nrow(deconv_coef_df_matrix))
         
-        # Extract row vector from deconv_coef_df_matrix
-        deconv_coef_vector <- as.numeric(deconv_coef_df_matrix[i, ])
+        # Iterate through each row of deconv_coef_df_matrix
+        for (i in 1:nrow(deconv_coef_df_matrix)) {
+                
+                # Extract row vector from deconv_coef_df_matrix
+                deconv_coef_vector <- as.numeric(deconv_coef_df_matrix[i, ])
+                
+                # Make sure the combined_matrix is correctly prepared each time
+                combined_matrix <- CPs_standards_input |> 
+                        select(-Molecule) |> 
+                        mutate(across(everything(), as.numeric)) |> 
+                        as.matrix()
+                
+                # Perform element-wise multiplication
+                result <- sweep(combined_matrix, 2, deconv_coef_vector, `*`)
+                
+                # Sum all the values in the matrix for this iteration
+                sum_results[i] <- sum(result, na.rm = TRUE)
+        }
         
-        # I had this one before, but to make sure
-        combined_matrix <- CPs_standards_input |> 
-                select(-Molecule)  |> 
-                mutate(across(everything(), as.numeric)) |> 
-                as.matrix()
+        # Create a data frame with summed values and replicate names
+        sum_results_df <- data.frame(
+                `Replicate Name` = deconv_coef_df$`Replicate Name`,  # Assuming "Replicate Name" column exists
+                Calculated_RF = sum_results
+        )
         
-        # Perform element-wise multiplication
-        result <- sweep(combined_matrix, 2, deconv_coef_vector, `*`)
+        # View the resulting data frame
+        print(sum_results_df)
+ 
+#Calculate the sum of the area in the samples 
+        #Sum the area of the samples
+               Area <- CPs_samples |> 
+                group_by(`Replicate Name`) |> 
+                summarize(Measured_Signal = sum(Area, na.rm = TRUE)) |> 
+                rename(Replicate.Name = `Replicate Name`)
         
-        # Create data frame with column names from CPs_standards_input
-        result_df <- as.data.frame(result)
-        colnames(result_df) <- colnames(CPs_standards_input)[-which(names(CPs_standards_input) == "Molecule")]
         
-        # Assign name to the result_df from deconv_coef_df
-        replicate_name <- deconv_coef_df$`Replicate Name`[i]
-        
-        # Store result in result_list with the corresponding name
-        result_list[[replicate_name]] <- result_df
-}
-
-# Print the names of each data frame and their first few rows
-for (name in names(result_list)) {
-        cat("DataFrame Name:", name, "\n")
-        print(head(result_list[[name]]))
-        cat("\n")
-}
-
-# Combine all data frames into a single data frame with 'Replicate Name'
-final_df <- do.call(rbind, Map(function(df, name) {
-        df$`Replicate Name` <- name
-        df <- df[, c("Replicate Name", setdiff(names(df), "Replicate Name"))]
-        df
-}, result_list, names(result_list)))
-
-# Add CPs_standards_input$Molecule column to final_df
-final_df$Molecule <- CPs_standards_input$Molecule
-
-# Print the final combined data frame
-print(final_df)
-
-
-#Organize the data
-final_df_tidy<-final_df|> 
-        group_by(`Replicate Name`) |> 
-        nest() |> 
-        ungroup()
-
-
-#Total sum the values for each replicate
-
-#Remove the molecule
-final_df_matrix<- final_df |> 
-        select(-Molecule) |> 
-        group_by(`Replicate Name`) |> 
-        nest()
-
-# Initialize an empty data frame to store results
-total_sums_df <- data.frame(
-        `Replicate Name` = character(),
-        `Total Sum` = numeric(),
-        stringsAsFactors = FALSE
-)
-
-# Iterate through each row of final_df_grouped
-for (i in 1:nrow(final_df_matrix)) {
-        # Extract nested data frame
-        nested_df <- final_df_matrix$data[[i]]
-        
-        # Calculate total sum for the current `Replicate Name`
-        `Replicate Name` <- final_df_matrix$`Replicate Name`[[i]]
-        total_sum <- sum(colSums(nested_df[, -1]))  # Exclude the grouping column
-        
-        # Append results to total_sums_df
-        total_sums_df <- rbind(total_sums_df, data.frame(
-                `Replicate Name` = `Replicate Name`,
-                `Total Sum` = total_sum
-        ))
-}
-
-# Print the resulting data frame
-print(total_sums_df)
-
-
-################################################### FINAL RESULTS ####################################################################
-CPs_samples<-CPs_samples |> 
-        rename(`Replicate.Name` = `Replicate Name`)
-
-# Merge total_sums_df into CPs_samples based on Replicate Name
-Concentration <- CPs_samples  |> 
-        left_join(total_sums_df, by = "Replicate.Name")  |> 
-        mutate(Concentration = `Relative_distribution` * `Total.Sum`)
-
-print(Concentration)
-Concentration<-Concentration |> 
-        group_by(Replicate.Name) |> 
-        distinct( `Molecule`, Concentration) |> 
-        nest()
-
-# Perform operations to reorganize data
-reorganized_data <- Concentration  |> 
-        unnest() |>  
-        distinct(`Replicate.Name`, `Molecule`, .keep_all = TRUE)  |> 
-        pivot_wider(names_from = `Molecule`, values_from = `Concentration`)
-reorganized_data <- t(reorganized_data) #transpose
-
-#Make the first row (replicate names) the column names
-colnames(reorganized_data) <- reorganized_data[1, ]
-Samples_Concentration <- reorganized_data[-1, ]
-# Convert the result back to a data frame
-Samples_Concentration <- as.data.frame(Samples_Concentration)
-Samples_Concentration<- Samples_Concentration |> 
-        mutate(Molecule = CPs_samples_input$Molecule)|> 
-        relocate(Molecule, .before = everything()) 
-
+#Calculate the concentration in ng/uL
+       Final_results <- full_join(sum_results_df, Area, by = "Replicate.Name") |> 
+               mutate(Concentration=Measured_Signal/Calculated_RF)
+       
 ######################################################### SAVE RESULTS ###################################################################
-
+       
 # Specify the file path where you want to save the Excel file
-excel_file <- "F:/LINKOPING/Manuscripts/Skyline/Skyline/Samples_Concentration.xlsx"
-
+ excel_file <- "F:/LINKOPING/Manuscripts/Skyline/Skyline/Samples_Concentration.xlsx"
+       
 # Write 'Samples_Concentration' to Excel
-write.xlsx(Samples_Concentration, excel_file, rowNames = FALSE)
-
+write.xlsx(Final_results, excel_file, rowNames = FALSE)
+       
 # Confirm message that the file has been saved
 cat("Excel file saved:", excel_file, "\n")
+
+################################################### FINAL RESULTS ####################################################################
+#CPs_samples<-CPs_samples |> 
+ #       rename(`Replicate.Name` = `Replicate Name`)
+
+# Merge total_sums_df into CPs_samples based on Replicate Name
+#Concentration <- CPs_samples  |> 
+ #       left_join(total_sums_df, by = "Replicate.Name")  |> 
+  #      mutate(Concentration = `Relative_distribution` * `Total.Sum`)
+
+#print(Concentration)
+#Concentration<-Concentration |> 
+ #       group_by(Replicate.Name) |> 
+  #      distinct( `Molecule`, Concentration) |> 
+   #     nest()
+
+# Perform operations to reorganize data
+#reorganized_data <- Concentration  |> 
+ #       unnest() |>  
+  #      distinct(`Replicate.Name`, `Molecule`, .keep_all = TRUE)  |> 
+   #     pivot_wider(names_from = `Molecule`, values_from = `Concentration`)
+#reorganized_data <- t(reorganized_data) #transpose
+
+#Make the first row (replicate names) the column names
+#colnames(reorganized_data) <- reorganized_data[1, ]
+#Samples_Concentration <- reorganized_data[-1, ]
+# Convert the result back to a data frame
+#Samples_Concentration <- as.data.frame(Samples_Concentration)
+#Samples_Concentration<- Samples_Concentration |> 
+ #       mutate(Molecule = CPs_samples_input$Molecule)|> 
+  #      relocate(Molecule, .before = everything()) 
+
+
 
 
 
