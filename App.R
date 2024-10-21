@@ -646,8 +646,8 @@ server <- function(input, output, session) {
                                 deconv_coef <- deconv_coef / sum(deconv_coef) * 100
                         }
                         
-                        deconv_resolved <- deconv$fitted.values
-                        deconv_reconst <- rowSums(combined_matrix %*% deconv_coef)
+                        # Calculate deconvolved resolved values
+                        deconv_resolved <- combined_matrix %*% deconv_coef
                         
                         # Ensure that values are positive for chi-square test
                         if (any(deconv_resolved <= 0) || any(df_vector <= 0)) {
@@ -660,7 +660,6 @@ server <- function(input, output, session) {
                         return(list(
                                 deconv_coef = deconv_coef,
                                 deconv_resolved = deconv_resolved,
-                                deconv_reconst = deconv_reconst,
                                 chisq_result = chisq_result
                         ))
                 }
@@ -753,7 +752,7 @@ server <- function(input, output, session) {
                
                 # Perform operations to reorganize data
                 Final_results <- Final_results |> 
-                        select(-Area, -Relative_distribution, -Calculated_RF, -measured_Signal, -Concentration) |> # Remove unwanted columns
+                        select(-Area, -Relative_distribution, -Calculated_RF, -Measured_Signal, -Concentration) |> # Remove unwanted columns
                         pivot_wider(
                                 names_from = Replicate.Name,  # Use values from Replicate.Name as new column names
                                 values_from = ConcentrationDetailed  # Use values from ConcentrationDetailed to fill the new columns

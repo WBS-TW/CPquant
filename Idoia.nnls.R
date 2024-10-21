@@ -28,7 +28,7 @@ library(openxlsx)
 ##############
 
 # reading data from excel
-Skyline_output <- read_excel("F:/LINKOPING/CP analysis/Samples_From_Orebro/Skyline/ResultsFromSkyline_NewSetting_ALLsamplesb.xlsx") |> 
+Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Data/Fish_Anders/Skyline/AndersSamples_ResultsFromSkyline_Concentration.xlsx") |> 
 #Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |> 
         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) |> 
         mutate(Area = as.numeric(Area)) |> 
@@ -175,8 +175,8 @@ perform_deconvolution <- function(df, combined_matrix) {
                 deconv_coef <- deconv_coef / sum(deconv_coef) * 100
         }
         
-        deconv_resolved <- deconv$fitted.values
-        deconv_reconst <- rowSums(combined_matrix %*% deconv_coef)
+        # Calculate deconvolved resolved values
+        deconv_resolved <- combined_matrix %*% deconv_coef
         
         # Ensure that values are positive for chi-square test
         if (any(deconv_resolved <= 0) || any(df_vector <= 0)) {
@@ -189,7 +189,6 @@ perform_deconvolution <- function(df, combined_matrix) {
         return(list(
                 deconv_coef = deconv_coef,
                 deconv_resolved = deconv_resolved,
-                deconv_reconst = deconv_reconst,
                 chisq_result = chisq_result
         ))
 }
