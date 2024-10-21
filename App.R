@@ -564,16 +564,16 @@ server <- function(input, output, session) {
                                Molecule != "RS",
                                `Isotope Label Type` == "Quan") |> 
                         mutate(Chain_length = str_extract(Molecule, "(?<=C)[^H]+") |> as.numeric()) |>  # Extract number after "C"
-                        mutate(Group = case_when(
-                                Chain_length >= 10 & Chain_length <= 13 ~ "S",  # Group S for 10-13
-                                Chain_length >= 14 & Chain_length <= 17 ~ "M",  # Group M for 14-17
-                                Chain_length >= 18 & Chain_length <= 30 ~ "L",  # Group L for 18-30
-                                TRUE ~ "Unknown"  # Default case
-                        )) |> 
-                        group_by(`Replicate Name`, Group) |>  # Group by Replicate Name and Group
+                        #mutate(Group = case_when(
+                         #       Chain_length >= 10 & Chain_length <= 13 ~ "S",  # Group S for 10-13
+                         #       Chain_length >= 14 & Chain_length <= 17 ~ "M",  # Group M for 14-17
+                          #      Chain_length >= 18 & Chain_length <= 30 ~ "L",  # Group L for 18-30
+                           #     TRUE ~ "Unknown"  # Default case
+                        #)) |> 
+                        group_by(`Replicate Name`) |>  # Group by Replicate Name and Group
                         mutate(Relative_distribution = Area / sum(Area, na.rm = TRUE)) |> 
                         ungroup() |>  # Ungroup before dropping the Group column
-                        select(-Group) |>  # Explicitly remove Group column
+                       #select(-Group) |>  # Explicitly remove Group column
                         select(`Replicate Name`, Molecule, Area, Relative_distribution) |>
                         mutate(across(Relative_distribution, ~replace(., is.nan(.), 0)))  # Replace NaN with zero
                 
@@ -619,11 +619,20 @@ server <- function(input, output, session) {
                                 stop("Dimensions of combined_matrix and df are incompatible.")
                         }
                         
-                        # Reshape df_matrix if it has only one column 
+                        # Reshape df_matrix if it has only one column or extract the first column if it has multiple
                         if (ncol(df_matrix) == 1) { 
                                 df_vector <- as.vector(df_matrix)
                         } else {
-                                df_vector <- df_matrix
+                                df_vector <- as.vector(df_matrix[, 1])  # Extract the first column for nnls
+                        }
+                        
+                        # Check for NA/NaN/Inf values in df_vector and combined_matrix
+                        if (any(is.na(df_vector)) || any(is.nan(df_vector)) || any(is.infinite(df_vector))) {
+                                stop("df_vector contains NA/NaN/Inf values.")
+                        }
+                        
+                        if (any(is.na(combined_matrix)) || any(is.nan(combined_matrix)) || any(is.infinite(combined_matrix))) {
+                                stop("combined_matrix contains NA/NaN/Inf values.")
                         }
                         
                         # Perform nnls
@@ -631,11 +640,17 @@ server <- function(input, output, session) {
                         
                         # Extract deconvolution results
                         deconv_coef <- deconv$x
+                        
+                        # Normalize the coefficients so they sum to 100%
+                        if (sum(deconv_coef) > 0) {
+                                deconv_coef <- deconv_coef / sum(deconv_coef) * 100
+                        }
+                        
                         deconv_resolved <- deconv$fitted.values
                         deconv_reconst <- rowSums(combined_matrix %*% deconv_coef)
                         
                         # Ensure that values are positive for chi-square test
-                        if (all(deconv_resolved <= 0) || all(df_vector <= 0)) {
+                        if (any(deconv_resolved <= 0) || any(df_vector <= 0)) {
                                 warning("Non-positive values found, skipping chi-square test")
                                 chisq_result <- NULL
                         } else {
@@ -651,15 +666,15 @@ server <- function(input, output, session) {
                 }
                 
                 
+                
                 # Apply the perform_deconvolution function to each nested data frame
-                Deconvolution <- combined_sample  |> 
+                Deconvolution <- combined_sample |> 
                         mutate(result = map(data, ~ perform_deconvolution(.x, combined_matrix)))
                 
-                
                 # Extract deconv_coef from results and create a new data frame
-                deconv_coef_df <- Deconvolution  |> 
-                        mutate(deconv_coef = map(result, "deconv_coef"))  |> 
-                        select(`Replicate Name`, deconv_coef)  |> 
+                deconv_coef_df <- Deconvolution |> 
+                        mutate(deconv_coef = map(result, "deconv_coef")) |> 
+                        select(`Replicate Name`, deconv_coef) |> 
                         unnest_wider(deconv_coef, names_sep = "_")
                 
                 #Remove the replicate name to generate vectors:
@@ -668,118 +683,103 @@ server <- function(input, output, session) {
                 
                 ########################################################## Calculate the concentration in ng/uL ###############################################################
                 
-                # Create an empty list to store results
-                result_list <- list()
+                #Calculate the response of the standards
                 
-                # Define a function to process each row
-                process_row <- function(i, deconv_coef_df_matrix, CPs_standards_input) {
+                #Remove the replicate name to generate vectors:
+                deconv_coef_df_matrix<- deconv_coef_df |> 
+                        select(-`Replicate Name`)
+                
+                # Initialize an empty vector to store the summed results
+                sum_results <- numeric(nrow(deconv_coef_df_matrix))
+                
+                # Iterate through each row of deconv_coef_df_matrix
+                for (i in 1:nrow(deconv_coef_df_matrix)) {
+                        
+                        # Extract row vector from deconv_coef_df_matrix
                         deconv_coef_vector <- as.numeric(deconv_coef_df_matrix[i, ])
-                        combined_matrix <- as.matrix(CPs_standards_input[, -which(names(CPs_standards_input) == "Molecule")])
+                        
+                        # Make sure the combined_matrix is correctly prepared each time
+                        combined_matrix <- CPs_standards_input |> 
+                                select(-Molecule) |> 
+                                mutate(across(everything(), as.numeric)) |> 
+                                as.matrix()
+                        
+                        # Perform element-wise multiplication
                         result <- sweep(combined_matrix, 2, deconv_coef_vector, `*`)
-                        result_df <- as.data.frame(result)
-                        colnames(result_df) <- colnames(CPs_standards_input)[-which(names(CPs_standards_input) == "Molecule")]
-                        replicate_name <- deconv_coef_df$`Replicate Name`[i]
-                        result_list[[replicate_name]] <- result_df
+                        
+                        # Sum all the values in the matrix for this iteration
+                        sum_results[i] <- sum(result, na.rm = TRUE) / 100
                 }
                 
-                # Apply process_row to each row of deconv_coef_df_matrix
-                result_list <- lapply(1:nrow(deconv_coef_df_matrix), process_row, deconv_coef_df_matrix, CPs_standards_input)
-                result_list <- setNames(result_list, deconv_coef_df$`Replicate Name`)
-                
-                
-                # Combine all data frames into a single data frame with 'Replicate Name'
-                final_df <- do.call(rbind, Map(function(df, name) {
-                        df$`Replicate Name` <- name
-                        df <- df[, c("Replicate Name", setdiff(names(df), "Replicate Name"))]
-                        df
-                }, result_list, names(result_list)))
-                
-                # Add CPs_standards_input$Molecule column to final_df
-                final_df$Molecule <- CPs_standards_input$Molecule
-                
-                # Print the final combined data frame
-                print(final_df)
-                
-                
-                #Organize the data
-                final_df_tidy<-final_df|> 
-                        group_by(`Replicate Name`) |> 
-                        nest() |> 
-                        ungroup()
-                
-                
-                #Total sum the values for each replicate
-                
-                #Remove the molecule
-                final_df_matrix<- final_df |> 
-                        select(-Molecule) |> 
-                        group_by(`Replicate Name`) |> 
-                        nest()
-                
-                # Initialize an empty data frame to store results
-                total_sums_df <- data.frame(
-                        `Replicate Name` = character(),
-                        `Total Sum` = numeric(),
-                        stringsAsFactors = FALSE
+                # Create a data frame with summed values and replicate names
+                sum_results_df <- data.frame(
+                        `Replicate Name` = deconv_coef_df$`Replicate Name`,  # Assuming "Replicate Name" column exists
+                        Calculated_RF = sum_results
                 )
                 
-                # Iterate through each row of final_df_grouped
-                for (i in 1:nrow(final_df_matrix)) {
-                        # Extract nested data frame
-                        nested_df <- final_df_matrix$data[[i]]
-                        
-                        # Calculate total sum for the current `Replicate Name`
-                        `Replicate Name` <- final_df_matrix$`Replicate Name`[[i]]
-                        total_sum <- sum(colSums(nested_df[, -1]))  # Exclude the grouping column
-                        
-                        # Append results to total_sums_df
-                        total_sums_df <- rbind(total_sums_df, data.frame(
-                                `Replicate Name` = `Replicate Name`,
-                                `Total Sum` = total_sum
-                        ))
-                }
+                # View the resulting data frame
+                print(sum_results_df)
                 
-                # Print the resulting data frame
-                print(total_sums_df)
+                #Calculate the sum of the area in the samples 
+                #Sum the area of the samples
+                Area <- CPs_samples |> 
+                        group_by(`Replicate Name`) |> 
+                        summarize(Measured_Signal = sum(Area, na.rm = TRUE)) |> 
+                        rename(Replicate.Name = `Replicate Name`)
+                
+                
+                #Calculate the concentration in ng/uL
+                Final_results <- full_join(sum_results_df, Area, by = "Replicate.Name") |> 
+                        mutate(Concentration=Measured_Signal/Calculated_RF)
+                
+                CPs_samples<- CPs_samples |> 
+                        rename(Replicate.Name = `Replicate Name`)
+                # Ensure both data frames are correctly named
+                # Merge CPs_samples with Final_results based on the common column 'Replicate.Name'
+                merged_df <- CPs_samples |> 
+                        left_join(Final_results, by = "Replicate.Name")
+                
+                # Multiply the column Relative_distribution by the corresponding value in Final_results
+                # Assuming the column in Final_results to multiply is named 'value_column' (replace with actual column name)
+                Final_results <- merged_df |> 
+                        mutate(ConcentrationDetailed = Relative_distribution * Concentration)
+                
+                # View the result
+                print(Final_results)
                 
                 
                 ################################################### FINAL RESULTS ####################################################################
-                CPs_samples<-CPs_samples |> 
-                        rename(`Replicate.Name` = `Replicate Name`)
-                
-                # Merge total_sums_df into CPs_samples based on Replicate Name
-                Concentration <- CPs_samples  |> 
-                        left_join(total_sums_df, by = "Replicate.Name")  |> 
-                        mutate(Concentration = `Relative_distribution` * `Total.Sum`)
-                
-                print(Concentration)
-                Concentration<-Concentration |> 
-                        group_by(Replicate.Name) |> 
-                        distinct( `Molecule`, Concentration) |> 
-                        nest()
-                
+
+               
                 # Perform operations to reorganize data
-                reorganized_data <- Concentration  |> 
-                        unnest(c(data)) |>  
-                        distinct(`Replicate.Name`, `Molecule`, .keep_all = TRUE)  |> 
-                        pivot_wider(names_from = `Molecule`, values_from = `Concentration`)
-                reorganized_data <- t(reorganized_data) #transpose
+                Final_results <- Final_results |> 
+                        select(-Area, -Relative_distribution, -Calculated_RF, -measured_Signal, -Concentration) |> # Remove unwanted columns
+                        pivot_wider(
+                                names_from = Replicate.Name,  # Use values from Replicate.Name as new column names
+                                values_from = ConcentrationDetailed  # Use values from ConcentrationDetailed to fill the new columns
+                        )
+                
+                #reorganized_data <- Concentration  |> 
+                 #       unnest(c(data)) |>  
+                  #      distinct(`Replicate.Name`, `Molecule`, .keep_all = TRUE)  |> 
+                   #     pivot_wider(names_from = `Molecule`, values_from = `Concentration`)
+                #reorganized_data <- t(reorganized_data) #transpose
                 
                 #Make the first row (replicate names) the column names
-                colnames(reorganized_data) <- reorganized_data[1, ]
-                Samples_Concentration <- reorganized_data[-1, ]
+                #colnames(reorganized_data) <- reorganized_data[1, ]
+                #Samples_Concentration <- reorganized_data[-1, ]
                 # Convert the result back to a data frame
-                Samples_Concentration <- as.data.frame(Samples_Concentration)
-                Samples_Concentration2 <- Samples_Concentration |> 
-                        mutate(Molecule = CPs_samples_input$Molecule)|> 
-                        relocate(Molecule, .before = everything()) 
+                #Samples_Concentration <- as.data.frame(Samples_Concentration)
+                #Samples_Concentration2 <- Samples_Concentration |> 
+                 #       mutate(Molecule = CPs_samples_input$Molecule)|> 
+                  #      relocate(Molecule, .before = everything()) 
                 
                 ### END: Deconvolution script
                 
                 
                 # Render table
                 output$quantTable <- DT::renderDT({
-                        DT::datatable(Samples_Concentration2, 
+                        DT::datatable(Final_results, 
                                       filter = "top", extensions = c("Buttons", "Scroller"),
                                       options = list(scrollY = 650,
                                                      scrollX = 500,
