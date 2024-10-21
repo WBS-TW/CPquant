@@ -279,7 +279,7 @@ deconv_coef_df_matrix<- deconv_coef_df |>
 ######################################################### SAVE RESULTS ###################################################################
        
 # Specify the file path where you want to save the Excel file
- excel_file <- "F:/LINKOPING/Manuscripts/Skyline/Skyline/Samples_Concentration.xlsx"
+ excel_file <- "F:/LINKOPING/Manuscripts/Skyline/Skyline/Samples_Concentration_Not100.xlsx"
        
 # Write 'Samples_Concentration' to Excel
 write.xlsx(merged_df, excel_file, rowNames = FALSE)
