@@ -86,8 +86,8 @@ server <- function(input, output, session) {
                         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) |> 
                         mutate(Area = as.numeric(Area)) |> 
                         mutate(Area = replace_na(Area, 0)) |>  # Replace missing values with 0
-                        mutate(RatioQuanToQual = as.numeric(RatioQuanToQual)) |> 
-                        mutate(RatioQualToQuan = as.numeric(RatioQualToQuan)) |> 
+                        #mutate(RatioQuanToQual = as.numeric(RatioQuanToQual)) |> 
+                        #mutate(RatioQualToQuan = as.numeric(RatioQualToQuan)) |> 
                         # Extract significant parts from the 'Molecule' column
                         # Extract "C" followed by numbers
                         mutate(C_part = str_extract(Molecule, "C\\d+"),
@@ -514,7 +514,7 @@ server <- function(input, output, session) {
                                Molecule != "RS",
                                `Isotope Label Type` == "Quan",
                                Note != "NA") |> 
-                        group_by(!!!input$standardAnnoColumn, Molecule) |>
+                        group_by(!!input$standardAnnoColumn, Molecule) |>
                         mutate(rel_int = Area/sum(Area)) |> #why is it needed? Maybe can be removed
                         nest() |> 
                         mutate(models = map(data, ~lm(Area ~ `Analyte Concentration`, data = .x))) |> 
@@ -532,7 +532,7 @@ server <- function(input, output, session) {
                         mutate(Chain_length = paste0("C", str_extract(Molecule, "(?<=C)[^H]+"))) |> 
                         #filter(Chain_length == "C10" | Chain_length == "C11" | Chain_length == "C12" | Chain_length == "C13") |> #this will be remove later or added as arg in fn
                         ungroup() |> 
-                        group_by(!!!input$standardAnnoColumn, Chain_length) |> #grouping by the selected Note
+                        group_by(!!input$standardAnnoColumn, Chain_length) |> #grouping by the selected Note
                         mutate(Sum_response_factor_chainlength = sum(Response_factor, na.rm = TRUE)) |> 
                         ungroup()
                 # For SCCPs
@@ -579,7 +579,7 @@ server <- function(input, output, session) {
                 
                 
                 CPs_standards_input <- CPs_standards |> 
-                        select(Molecule, !!!input$standardAnnoColumn, Response_factor) |> 
+                        select(Molecule, !!input$standardAnnoColumn, Response_factor) |> 
                         pivot_wider(names_from = !!input$standardAnnoColumn, values_from = "Response_factor")
                 
                 

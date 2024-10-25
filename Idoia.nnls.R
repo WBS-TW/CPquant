@@ -28,14 +28,15 @@ library(openxlsx)
 ##############
 
 # reading data from excel
-Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Data/Fish_Anders/Skyline/AndersSamples_ResultsFromSkyline_Concentration.xlsx") |> 
+Skyline_output <- read_excel("F:/LINKOPING/CP analysis/ALEX/Results/Skyline_Results_Alex.xlsx") |> 
+#Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Data/Fish_Anders/Skyline/AndersSamples_ResultsFromSkyline_Concentration.xlsx") |> 
 #Skyline_output <- read_excel("F:/LINKOPING/Manuscripts/Skyline/Skyline/OrbitrapDust.xlsx") |> 
         mutate(`Analyte Concentration` = as.numeric(`Analyte Concentration`)) |> 
         mutate(Area = as.numeric(Area)) |> 
         mutate(Area = replace_na(Area, 0)) |> # Replace missing values in the Response_factor column with 0
-        mutate(Area = replace_na(Area, 0)) |>
-        mutate(RatioQuanToQual = as.numeric(RatioQuanToQual)) |> #--< convert to numeric #-->
-        mutate(RatioQualToQuan = as.numeric(RatioQualToQuan)) #--< convert to numeric #-->
+        mutate(Area = replace_na(Area, 0)) #|>
+        #mutate(RatioQuanToQual = as.numeric(RatioQuanToQual)) |> #--< convert to numeric #-->
+        #mutate(RatioQualToQuan = as.numeric(RatioQualToQuan)) #--< convert to numeric #-->
 
 
 #This is currently filtered for C10-C13 only to compare with the Perkons script. Will remove later or add as an argument in function
