@@ -2,7 +2,7 @@
 # generateInput_Envipat
 # generateInput_Envipat_BCA
 
-generateInput_Envipat <- function(data = data, group = group) {
+generateInput_Envipat <- function(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions) {
         
         
         data <- data |> 
@@ -46,7 +46,7 @@ generateInput_Envipat <- function(data = data, group = group) {
 
 
 # For bromochloroalkanes
-generateInput_Envipat_BCA <- function(data = data, group = group) {
+generateInput_Envipat_BCA <- function(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions) {
         
         
         data <- data |> 

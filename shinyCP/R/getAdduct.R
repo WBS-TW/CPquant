@@ -41,9 +41,9 @@ getAdduct <- function(adduct_ions, C, Cl, Clmax, threshold) {
         ####################################################################         
         
         if(group == "BCA"){
-                data <- generateInput_Envipat_BCA(data = data, group = group)        
+                data <- generateInput_Envipat_BCA(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions)        
         } else {
-                data <- generateInput_Envipat(data = data, group = group)
+                data <- generateInput_Envipat(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions)
         }
         
         # Remove formula without Cl after adduct formations
