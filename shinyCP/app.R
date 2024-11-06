@@ -10,9 +10,10 @@ library(markdown)
 
 data("isotopes")
 source("./R/getAdduct.R")
+source("./R/getAdduct_BCA.R")
 source("./R/getSkyline.R")
-source("./R/getAdduct_BrCl.R")
-source("./R/getSkyline_BrCl.R")
+source("./R/getSkyline_BCA.R")
+source("./R/generateInput_Envipat.R")
 
 
 #--------------------------------UI function----------------------------------#
@@ -43,6 +44,7 @@ ui <- shiny::navbarPage(
                                                                 "[PCO+Cl]-",
                                                                 "[PCA+Br]-",
                                                                 "[BCA+Cl]-",
+                                                                "[BCA-Cl]-",
                                                                 "[PCA-Cl-HCl]+", 
                                                                 "[PCA-Cl-2HCl]+", 
                                                                 "[PCA-Cl-3HCl]+", 
@@ -148,11 +150,11 @@ server = function(input, output, session) {
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get adducts or fragments
-                CP_allions <- data.frame(Parent_Formula = character(), Halo_perc = double())
+                CP_allions <- data.frame(Molecule_Formula = character(), Halo_perc = double())
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-                        if(Adducts[i] == "[BCA+Cl]-"){
-                                input <- getAdduct_BrCl(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), 
+                        if(str_detect(Adducts[i], "\\bBCA\\b")){
+                                input <- getAdduct_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), 
                                                         Br = Br(), Brmax = Brmax(), threshold = threshold())
                         } else {
                                 input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
@@ -190,7 +192,7 @@ server = function(input, output, session) {
         
         
         
-        ### go2: Calculates the interfering ions tab ###
+############ go2: Calculates the interfering ions tab ############
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -222,7 +224,7 @@ server = function(input, output, session) {
                                         mode = "markers",
                                         color = ~interference,
                                         hoverinfo = "text",
-                                        hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                        hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
                                                           '<br>',
                                                           "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
                                                           '<br>',
@@ -246,7 +248,7 @@ server = function(input, output, session) {
                                                 mode = "markers",
                                                 color = ~interference,
                                                 hoverinfo = "text",
-                                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                                hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
                                                                   '<br>',
                                                                   "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
                                                                   '<br>',
@@ -274,7 +276,7 @@ server = function(input, output, session) {
                                 color = ~interference,
                                 #text = ~Adduct,
                                 hoverinfo = "text",
-                                hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
                                                   '<br>',
                                                   "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
                                                   '<br>',
@@ -301,7 +303,7 @@ server = function(input, output, session) {
                                         color = ~interference,
                                         #text = ~Adduct,
                                         hoverinfo = "text",
-                                        hovertext = paste("Parent Formula:", CP_allions_compl2$Parent_Formula,
+                                        hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
                                                           '<br>',
                                                           "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
                                                           '<br>',
@@ -346,7 +348,7 @@ server = function(input, output, session) {
         })
         # go2 end
         
-        ### go3: Skyline tab ###
+############ go3: Skyline tab ############
         
         CP_allions_skyline <- eventReactive(input$go3, {
                 
@@ -361,12 +363,12 @@ server = function(input, output, session) {
                 Adducts <- as.character(selectedAdducts())
                 
                 # function to get Skyline adducts or fragments
-                CP_allions_sky <- data.frame(Parent_Formula = character(), Halo_perc = double())
+                CP_allions_sky <- data.frame(Molecule_Formula = character(), Halo_perc = double())
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         
                         if(Adducts[i] == "[BCA+Cl]-"){
-                                input <- getSkyline_BrCl(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
+                                input <- getSkyline_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
                                                          Br = Br(), Brmax = Brmax(), threshold = threshold())
                         } else {
                                 input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
@@ -384,7 +386,7 @@ server = function(input, output, session) {
                                 mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
                                                                         str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`),
                                                                         str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", `12C`))) %>%
-                                rename(`Molecule Name` = Parent_Formula) %>%
+                                rename(`Molecule Name` = Molecule_Formula) %>%
                                 mutate(`Molecular Formula` = case_when(
                                         `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
                                         `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
@@ -438,7 +440,7 @@ server = function(input, output, session) {
                                 mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
                                                                         str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`),
                                                                         str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", `12C`))) %>%
-                                rename(`Molecule Name` = Parent_Formula) %>%
+                                rename(`Molecule Name` = Molecule_Formula) %>%
                                 mutate(`Precursor m/z` = `m/z`) %>% 
                                 # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>% 
                                 # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
@@ -487,7 +489,7 @@ server = function(input, output, session) {
         
         
         
-        # go3 end
+########## go3 end
         
         #----Outputs_End
         
