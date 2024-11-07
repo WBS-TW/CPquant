@@ -149,8 +149,6 @@ adduct_ions = Adducts[i]
 
 
 
-
-
 Skyline tab
 ```{r}
 
@@ -163,6 +161,66 @@ CP_allions_skyline <- CP_allions %>%
 
 
 ```
+
+
+
+Test new advanced settings
+```{r}
+library(shiny)
+library(shinythemes)
+library(DT)
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(crosstalk)
+library(enviPat)
+library(markdown)
+
+data("isotopes")
+source("./shinyCP/R/getAdduct.R")
+source("./shinyCP/R/getSkyline.R")
+source("./shinyCP/R/getAdduct_BCA.R")
+source("./shinyCP/R/getSkyline_BCA.R")
+source("./shinyCP/R/generateInput_Envipat.R")
+
+selectedCompounds <- "PCA"
+selectedAdducts <- "+Cl"
+selectedIonization <- "-"
+#selectedTP <- "None"
+selectedTP <- "+OH"
+
+Cmin <- 10
+Cmax  <- 12
+Clmin <- 1
+Clmax <- 4
+Brmin <- 1
+Brmax <- 3
+Br <- as.integer(Brmin:Brmax)
+
+threshold <- 5
+MSresolution <- 60000
+
+i <- 1
+
+C <- as.integer(Cmin:Cmax)
+Cl <- as.integer(Clmin:Clmax)
+
+Compounds <- as.character(selectedCompounds)
+Adducts <- as.character(selectedAdducts)
+Ionization <- as.character(selectedIonization)
+TP <- as.character(selectedTP)
+
+Molecule_Annotation <- case_when(
+        TP == "None" ~ paste0("[", Compounds, Adducts, "]", Ionization),
+        TRUE ~ paste0("[", Compounds, TP, Adducts, "]", Ionization)
+)
+
+adduct_ions = Adducts[i]
+
+
+```
+
+
 
 
       
