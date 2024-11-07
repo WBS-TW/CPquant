@@ -9,11 +9,12 @@ library(enviPat)
 library(markdown)
 
 data("isotopes")
+source("./R/generateInput_Envipat.R")
 source("./R/getAdduct.R")
 source("./R/getAdduct_BCA.R")
 source("./R/getSkyline.R")
 source("./R/getSkyline_BCA.R")
-source("./R/generateInput_Envipat.R")
+
 
 
 #--------------------------------UI function----------------------------------#

@@ -34,7 +34,8 @@ Clmax <- 4
 Brmin <- 1
 Brmax <- 3
 Br <- as.integer(Brmin:Brmax)
-Adduct <- "[PCA+Cl]-"
+#Adduct <- "[PCA+Cl]-"
+Adduct <- "[PCA-2Cl-HCl]-"
 threshold <- 5
 MSresolution <- 60000
 
