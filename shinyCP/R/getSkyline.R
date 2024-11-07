@@ -1,9 +1,6 @@
-
 # Check how to write ion formulas and adduct descriptions: 
 # https://skyline.ms/_webdav/home/software/Skyline/@files/tutorials/Skyline%20Small%20Molecule%20Targets.pdf
-
 getSkyline <- function(adduct_ions, C, Cl, Clmax, threshold) {
-        
         ####################################################################         
         # Regex to extract strings
         #################################################################### 
@@ -39,40 +36,28 @@ getSkyline <- function(adduct_ions, C, Cl, Clmax, threshold) {
                         mutate(Charge = as.integer(1))
         }
         
-        # generate input data for envipat based on fragment_ions
+        ####################################################################       
+        ####### generate input data for envipat based on fragment_ions
+        ####################################################################         
         
-        # Generate chemical formula for each homologue group  
-        if (fragment_ions == "+Br") {        
-                data <- data %>%
-                        mutate(Parent = Formula) %>% 
-                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
-                        mutate(Adduct = adduct_ions) %>%
-                        mutate(Cl = Cl) %>%
-                        mutate(Br = 1) |> 
-                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl, "Br", Br)) %>%
-                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl, Br)
+        if(group == "BCA"){
+                data <- generateInput_Envipat_BCA(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions)        
         } else {
-                data <- data %>%
-                        mutate(Parent = Formula) %>% 
-                        mutate(Halo_perc = case_when(group == "PCA" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C+2-Cl) + 35.45*Cl)*100, 2),
-                                                   group == "PCO" ~ round(35.45*Cl / (12.01*C + 1.008*(2*C-Cl) + 35.45*Cl)*100, 2))) %>%
-                        mutate(Adduct = adduct_ions) %>%
-                        mutate(Cl = Cl) %>%
-                        mutate(Formula = paste0("C", C, "H", H, "Cl", Cl)) %>%
-                        select(Parent, Halo_perc, Charge, Adduct, Formula, C, H, Cl)
+                data <- generateInput_Envipat(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions)
         }
         
         # Remove formula without Cl after adduct formations
         data <- data %>%
                 filter(Cl > 0)
         
-        # All ion formulas
+        # Create empty list for all ion formulas
         CP_allions <- list()
         data_ls <- list()
         
-        
-        # function to get isotopic patterns for all PCAs. Limit the threshold to 10%, neutral form. data("isotopes") needs to be loaded first
+        #################################################################### 
+        # function to get isotopic patterns for all PCAs. 
+        # data("isotopes") needs to be loaded in app.R
+        #################################################################### 
         getisotopes <- function(x) {enviPat::isopattern(isotopes = isotopes, 
                                                         chemforms = x, 
                                                         threshold = threshold, 
@@ -80,22 +65,21 @@ getSkyline <- function(adduct_ions, C, Cl, Clmax, threshold) {
                                                         plotit = FALSE, 
                                                         charge = Charge)}
         
-        # This is for [M+Br]- adducts
-        if (fragment_ions == "+Br") { 
-                for (j in seq_along(data$Formula)) {
-                        Formula <- data$Formula[j]
-                        Parent <- data$Parent[j]
+        if (fragment_ions == "+Br") { #this is for Br adduct
+                for (j in seq_along(data$Adduct_Formula)) {
+                        Adduct_Formula <- data$Adduct_Formula[j]
+                        Molecule_Formula <- data$Molecule_Formula[j]
                         Charge <- data$Charge[j]
                         Halo_perc <- data$Halo_perc[j]
-                        dat <- getisotopes(x = as.character(data$Formula[j]))
+                        dat <- getisotopes(x = as.character(data$Adduct_Formula[j]))
                         dat <- as.data.frame(dat[[1]])
                         dat <- dat %>% 
                                 mutate(abundance = round(abundance, 1)) %>%
                                 mutate(`m/z` = round(`m/z`, 6)) %>%
                                 mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`, "[79Br]", `79Br`, "[81Br]", `81Br`)) %>%
-                                mutate(Parent_Formula = Parent) %>%
+                                mutate(Molecule_Formula = Molecule_Formula) %>%
                                 mutate(Halo_perc = Halo_perc) %>%
-                                mutate(Adduct_Formula =  Formula) %>%
+                                mutate(Adduct_Formula =  Adduct_Formula) %>%
                                 mutate(Charge = Charge) %>%
                                 mutate(Isotopologue = case_when(
                                         `13C` + (`37Cl`+`81Br`)*2 == 0 ~ "",
@@ -121,24 +105,24 @@ getSkyline <- function(adduct_ions, C, Cl, Clmax, threshold) {
                                         `13C` + (`37Cl`+`81Br`)*2 == 20 ~ "+20")) %>%
                                 mutate(Adduct = paste0(adduct_ions, " ", Isotopologue)) %>%
                                 rename(Rel_ab = abundance) %>%
-                                select(Parent_Formula, Halo_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, `79Br`, `81Br`)
+                                select(Molecule_Formula, Halo_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, `79Br`, `81Br`)
                         data_ls[[j]] <- dat
                 }
-        }else { # This is for all the other adducts 
-                for (j in seq_along(data$Formula)) {
-                        Formula <- data$Formula[j]
-                        Parent <- data$Parent[j]
+        }else { # for other adducts
+                for (j in seq_along(data$Adduct_Formula)) {
+                        Adduct_Formula <- data$Adduct_Formula[j]
+                        Molecule_Formula <- data$Molecule_Formula[j]
                         Charge <- data$Charge[j]
                         Halo_perc <- data$Halo_perc[j]
-                        dat <- getisotopes(x = as.character(data$Formula[j]))
+                        dat <- getisotopes(x = as.character(data$Adduct_Formula[j]))
                         dat <- as.data.frame(dat[[1]])
                         dat <- dat %>% 
                                 mutate(abundance = round(abundance, 1)) %>%
                                 mutate(`m/z` = round(`m/z`, 6)) %>%
                                 mutate(Isotope_Formula = paste0("[12C]", `12C`, "[13C]", `13C`, "[1H]", `1H`, "[2H]", `2H`, "[35Cl]", `35Cl`, "[37Cl]", `37Cl`)) %>%
-                                mutate(Parent_Formula = Parent) %>%
+                                mutate(Molecule_Formula = Molecule_Formula) %>%
                                 mutate(Halo_perc = Halo_perc) %>%
-                                mutate(Adduct_Formula =  Formula) %>%
+                                mutate(Adduct_Formula =  Adduct_Formula) %>%
                                 mutate(Charge = Charge) %>%
                                 mutate(Isotopologue = case_when(
                                         `13C` + (`37Cl`)*2 == 0 ~ "",
@@ -164,7 +148,7 @@ getSkyline <- function(adduct_ions, C, Cl, Clmax, threshold) {
                                         `13C` + (`37Cl`)*2 == 20 ~ "+20")) %>%
                                 mutate(Adduct = paste0(adduct_ions, " ", Isotopologue)) %>%
                                 rename(Rel_ab = abundance) %>%
-                                select(Parent_Formula, Halo_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
+                                select(Molecule_Formula, Halo_perc, Charge, Adduct, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`)
                         data_ls[[j]] <- dat
                 }
         }

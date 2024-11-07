@@ -154,7 +154,9 @@ Skyline tab
 ```{r}
 
 
-                        
+CP_allions_skyline <- CP_allions %>%
+                                mutate(`Molecule List Name` = case_when(str_detect(
+                                        Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)"))))      
                 
 
 

@@ -155,7 +155,7 @@ server = function(input, output, session) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         if(str_detect(Adducts[i], "\\bBCA\\b")){
                                 input <- getAdduct_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), 
-                                                        Br = Br(), Brmax = Brmax(), threshold = threshold())
+                                                       Br = Br(), Brmax = Brmax(), threshold = threshold())
                         } else {
                                 input <- getAdduct(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
                         }
@@ -192,7 +192,7 @@ server = function(input, output, session) {
         
         
         
-############ go2: Calculates the interfering ions tab ############
+        ############ go2: Calculates the interfering ions tab ############
         shiny::observeEvent(input$go2, {
                 
                 CP_allions_compl2 <- CP_allions_glob() %>%
@@ -213,31 +213,31 @@ server = function(input, output, session) {
                 
                 # Output scatterplot: #Cl vs #C  if Br exists
                 if ("79Br" %in% names(CP_allions_compl2) == TRUE){ 
-                output$Plotly <- plotly::renderPlotly(
-                        p <- CP_allions_compl2 %>% 
-                                mutate(`79Br` = tidyr::replace_na(`79Br`, 0)) %>%
-                                mutate(`81Br` = tidyr::replace_na(`81Br`, 0)) %>%
-                                plot_ly(
-                                        x = ~ (`12C`+`13C`), 
-                                        y = ~(`35Cl`+`37Cl`+`79Br`+`81Br`), # need to incorporate Br later
-                                        type = "scatter",
-                                        mode = "markers",
-                                        color = ~interference,
-                                        hoverinfo = "text",
-                                        hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
-                                                          '<br>',
-                                                          "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
-                                                          '<br>',
-                                                          "Ion Formula:", CP_allions_compl2$Adduct_Formula,
-                                                          '<br>',
-                                                          "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
-                                                                                     "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`, " [79Br]:", CP_allions_compl2$`79Br`, " [81Br]:", CP_allions_compl2$`81Br`))
-                                )
-                        %>% 
-                                plotly::layout(xaxis = list(title = "Number of carbons (12C+13C)"),
-                                               yaxis = list(title = "Number of halogens (35Cl+37Cl+79Br+81Br)"),
-                                               legend=list(title=list(text='<b> Interference at MS res? </b>')))
-                )
+                        output$Plotly <- plotly::renderPlotly(
+                                p <- CP_allions_compl2 %>% 
+                                        mutate(`79Br` = tidyr::replace_na(`79Br`, 0)) %>%
+                                        mutate(`81Br` = tidyr::replace_na(`81Br`, 0)) %>%
+                                        plot_ly(
+                                                x = ~ (`12C`+`13C`), 
+                                                y = ~(`35Cl`+`37Cl`+`79Br`+`81Br`), # need to incorporate Br later
+                                                type = "scatter",
+                                                mode = "markers",
+                                                color = ~interference,
+                                                hoverinfo = "text",
+                                                hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
+                                                                  '<br>',
+                                                                  "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
+                                                                  '<br>',
+                                                                  "Ion Formula:", CP_allions_compl2$Adduct_Formula,
+                                                                  '<br>',
+                                                                  "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                                                             "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`, " [79Br]:", CP_allions_compl2$`79Br`, " [81Br]:", CP_allions_compl2$`81Br`))
+                                        )
+                                %>% 
+                                        plotly::layout(xaxis = list(title = "Number of carbons (12C+13C)"),
+                                                       yaxis = list(title = "Number of halogens (35Cl+37Cl+79Br+81Br)"),
+                                                       legend=list(title=list(text='<b> Interference at MS res? </b>')))
+                        )
                 } else { #if there are no bromines
                         output$Plotly <- plotly::renderPlotly(
                                 p <- CP_allions_compl2 %>% 
@@ -266,34 +266,34 @@ server = function(input, output, session) {
                 }
                 
                 # Output the interference bar plot: Rel_ab vs m/z
-               
+                
                 if ("79Br" %in% names(CP_allions_compl2) == TRUE){ 
-                output$Plotly2 <- plotly::renderPlotly(
-                        p <- CP_allions_compl2 %>% plot_ly(
-                                x = ~`m/z`, 
-                                y = ~Rel_ab,
-                                type = "bar",
-                                color = ~interference,
-                                #text = ~Adduct,
-                                hoverinfo = "text",
-                                hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
-                                                  '<br>',
-                                                  "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
-                                                  '<br>',
-                                                  "Ion Formula:", CP_allions_compl2$Adduct_Formula,
-                                                  '<br>',
-                                                  "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
-                                                                             "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`, " [79Br]:", CP_allions_compl2$`79Br`, " [81Br]:", CP_allions_compl2$`81Br`),
-                                                  '<br>',
-                                                  "m/z:", CP_allions_compl2$`m/z`,
-                                                  '<br>',
-                                                  "m/z diff (prev and next):", CP_allions_compl2$difflag, "&", CP_allions_compl2$difflead,
-                                                  '<br>',
-                                                  "Resolution needed (prev and next):", CP_allions_compl2$reslag, "&", CP_allions_compl2$reslead)
+                        output$Plotly2 <- plotly::renderPlotly(
+                                p <- CP_allions_compl2 %>% plot_ly(
+                                        x = ~`m/z`, 
+                                        y = ~Rel_ab,
+                                        type = "bar",
+                                        color = ~interference,
+                                        #text = ~Adduct,
+                                        hoverinfo = "text",
+                                        hovertext = paste("Molecule_Formula:", CP_allions_compl2$Molecule_Formula,
+                                                          '<br>',
+                                                          "Adduct/Fragment ion:", CP_allions_compl2$Adduct,
+                                                          '<br>',
+                                                          "Ion Formula:", CP_allions_compl2$Adduct_Formula,
+                                                          '<br>',
+                                                          "Adduct isotopes:", paste0("[12C]:", CP_allions_compl2$`12C`, "  [13C]:", CP_allions_compl2$`13C`, 
+                                                                                     "  [35Cl]:", CP_allions_compl2$`35Cl`, "  [37Cl]:", CP_allions_compl2$`37Cl`, " [79Br]:", CP_allions_compl2$`79Br`, " [81Br]:", CP_allions_compl2$`81Br`),
+                                                          '<br>',
+                                                          "m/z:", CP_allions_compl2$`m/z`,
+                                                          '<br>',
+                                                          "m/z diff (prev and next):", CP_allions_compl2$difflag, "&", CP_allions_compl2$difflead,
+                                                          '<br>',
+                                                          "Resolution needed (prev and next):", CP_allions_compl2$reslag, "&", CP_allions_compl2$reslead)
+                                )
+                                %>% 
+                                        plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
                         )
-                        %>% 
-                                plotly::layout(legend=list(title=list(text='<b> Interference at MS res? </b>')))
-                )
                 } else {
                         output$Plotly2 <- plotly::renderPlotly(
                                 p <- CP_allions_compl2 %>% plot_ly(
@@ -348,7 +348,7 @@ server = function(input, output, session) {
         })
         # go2 end
         
-############ go3: Skyline tab ############
+        ############ go3: Skyline tab ############
         
         CP_allions_skyline <- eventReactive(input$go3, {
                 
@@ -367,9 +367,9 @@ server = function(input, output, session) {
                 for (i in seq_along(Adducts)) {
                         progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
                         
-                        if(Adducts[i] == "[BCA+Cl]-"){
-                                input <- getSkyline_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
-                                                         Br = Br(), Brmax = Brmax(), threshold = threshold())
+                        if(str_detect(Adducts[i], "\\bBCA\\b")){
+                        input <- getSkyline_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
+                                                        Br = Br(), Brmax = Brmax(), threshold = threshold())
                         } else {
                                 input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
                         }
@@ -379,13 +379,13 @@ server = function(input, output, session) {
                 }
                 return(CP_allions_sky)
         })
-        # The IonFormula is not activated yet since not compatible with [M-Cl]- (adduct not available in skyline)
+        #The IonFormula is not activated yet since not compatible with [M-Cl]- (adduct not available in skyline)
         shiny::observeEvent(input$go3, {
                 if(input$skylineoutput == "IonFormula"){
                         CP_allions_skyline <- CP_allions_skyline() %>%
-                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
-                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`),
-                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", `12C`))) %>%
+                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
+                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
+                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")))) %>%
                                 rename(`Molecule Name` = Molecule_Formula) %>%
                                 mutate(`Molecular Formula` = case_when(
                                         `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
@@ -397,24 +397,24 @@ server = function(input, output, session) {
                                 rename(`Precursor Charge` = Charge) %>%
                                 add_column(`Explicit Retention Time` = NA) %>%
                                 add_column(`Explicit Retention Time Window` = NA) %>%
-                                group_by(`Molecule Name`) |> 
+                                group_by(`Molecule Name`) |>
                                 mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
-                                ungroup() |> 
-                                select(`Molecule List Name`, 
-                                       `Molecule Name`, 
-                                       `Molecular Formula`, 
+                                ungroup() |>
+                                select(`Molecule List Name`,
+                                       `Molecule Name`,
+                                       `Molecular Formula`,
                                        `Precursor Adduct`,
                                        `Precursor Charge`,
                                        `Label Type`,
-                                       `Explicit Retention Time`, 
-                                       `Explicit Retention Time Window`, 
+                                       `Explicit Retention Time`,
+                                       `Explicit Retention Time Window`,
                                        Note)
                         
                         
                         
                         output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
                                 # Show data
-                                DT::datatable(CP_allions_skyline, 
+                                DT::datatable(CP_allions_skyline,
                                               filter = "top", extensions = c("Buttons", "Scroller"),
                                               options = list(scrollY = 650,
                                                              scrollX = 500,
@@ -430,40 +430,40 @@ server = function(input, output, session) {
                                                                                  )),
                                                                             list(extend = "colvis", targets = 0, visible = FALSE)),
                                                              dom = "lBfrtip",
-                                                             fixedColumns = TRUE), 
+                                                             fixedColumns = TRUE),
                                               rownames = FALSE)
                         })
                         
                 }else if(input$skylineoutput == "mz"){
                         
                         CP_allions_skyline2 <- CP_allions_glob() %>%
-                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", `12C`),
-                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", `12C`),
-                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", `12C`))) %>%
+                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
+                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
+                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")))) %>%
                                 rename(`Molecule Name` = Molecule_Formula) %>%
-                                mutate(`Precursor m/z` = `m/z`) %>% 
-                                # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>% 
+                                mutate(`Precursor m/z` = `m/z`) %>%
+                                # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>%
                                 # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
                                 rename(Note = Adduct) %>%
                                 rename(`Precursor Charge` = Charge) %>%
                                 add_column(`Explicit Retention Time` = NA) %>%
                                 add_column(`Explicit Retention Time Window` = NA) %>%
-                                group_by(`Molecule Name`) |> 
+                                group_by(`Molecule Name`) |>
                                 mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
                                 ungroup() %>%
-                                select(`Molecule List Name`, 
+                                select(`Molecule List Name`,
                                        `Molecule Name`,
-                                       `Precursor Charge`, 
+                                       `Precursor Charge`,
                                        `Label Type`,
                                        `Precursor m/z` = `m/z`,
-                                       `Explicit Retention Time`, 
-                                       `Explicit Retention Time Window`, 
+                                       `Explicit Retention Time`,
+                                       `Explicit Retention Time Window`,
                                        Note)
                         
                         
                         output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                                 # Show data
-                                DT::datatable(CP_allions_skyline2, 
+                                DT::datatable(CP_allions_skyline2,
                                               filter = "top", extensions = c("Buttons", "Scroller"),
                                               options = list(scrollY = 650,
                                                              scrollX = 500,
@@ -479,7 +479,7 @@ server = function(input, output, session) {
                                                                                  )),
                                                                             list(extend = "colvis", targets = 0, visible = FALSE)),
                                                              dom = "lBfrtip",
-                                                             fixedColumns = TRUE), 
+                                                             fixedColumns = TRUE),
                                               rownames = FALSE)
                         })
                 }
@@ -489,7 +489,7 @@ server = function(input, output, session) {
         
         
         
-########## go3 end
+        ########## go3 end
         
         #----Outputs_End
         

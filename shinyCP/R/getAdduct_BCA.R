@@ -38,7 +38,7 @@ getAdduct_BCA <- function(adduct_ions, C, Cl, Br, Clmax, Brmax, threshold) {
         #################################################################### 
         
         
-        data <- generateInput_Envipat_BCA(data = data, group = group)        
+        data <- generateInput_Envipat_BCA(data = data, group = group, adduct_ions = adduct_ions, fragment_ions = fragment_ions)      
         
         
         
