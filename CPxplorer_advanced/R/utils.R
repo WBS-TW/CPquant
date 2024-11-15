@@ -1,0 +1,141 @@
+# Various utilities and helper functions
+
+create_formula <- function(C, H, Cl, Br, S, O) {
+        formula <- paste0(
+                case_when(C < 1 ~ paste0(""),
+                          C == 1 ~ paste0("C"),
+                          C > 1  ~ paste0("C", C)),
+                case_when(H < 1 ~ paste0(""),
+                          H == 1 ~ paste0("H"),
+                          H > 1  ~ paste0("H", H)),
+                case_when(Cl < 1 ~ paste0(""),
+                          Cl == 1 ~ paste0("Cl"),
+                          Cl > 1  ~ paste0("Cl", Cl)),
+                case_when(Br < 1 ~ paste0(""),
+                          Br == 1 ~ paste0("Br"),
+                          Br > 1  ~ paste0("Br", Br)),
+                case_when(S < 1 ~ paste0(""),
+                          S == 1 ~ paste0("S"),
+                          S > 1  ~ paste0("S", S)),
+                case_when(O < 1 ~ paste0(""),
+                          O == 1 ~ paste0("O"),
+                          O > 1  ~ paste0("O", O))
+        )
+        # Remove any leading or trailing spaces
+        str_trim(formula)
+}
+
+
+create_elements <- function(data) {
+        # String vector
+        string_vector <- c("m/z", "abundance", "12C", "13C", "1H", "2H","35Cl", "37Cl", "79Br", "81Br", "16O", "17O", "18O", "32S", "33S", "34S", "36S")
+        
+        # Identify columns in the string vector that are not in the data frame
+        new_columns <- setdiff(string_vector, names(data))
+        
+        # Add new columns to the data frame with default values: 0
+        for (col in new_columns) {
+                data[[col]] <- 0
+        }
+        return(data)
+}
+
+create_formula_isotope <- function(`12C`,`13C`, `1H`,`2H`, `35Cl`, `37Cl`, `79Br`, `81Br`, `16O`, `17O`, `18O`, `32S`, `33S`, `34S`, `36S`){
+        formula_iso <- paste0(
+                ifelse(`12C` > 0, paste0("[12C]", `12C`), ""),
+                ifelse(`13C` > 0, paste0("[13C]", `13C`), ""),
+                ifelse(`1H` > 0, paste0("[1H]", `1H`), ""),
+                ifelse(`2H` > 0, paste0("[2H]", `2H`), ""),
+                ifelse(`35Cl` > 0, paste0("[35Cl]", `35Cl`), ""),
+                ifelse(`37Cl` > 0, paste0("[37Cl]", `37Cl`), ""),
+                ifelse(`79Br` > 0, paste0("[79Br]", `79Br`), ""),
+                ifelse(`81Br` > 0, paste0("[81Br]", `81Br`), ""),
+                ifelse(`16O` > 0, paste0("[16O]", `16O`), ""),
+                ifelse(`17O` > 0, paste0("[17O]", `17O`), ""),
+                ifelse(`18O` > 0, paste0("[18O]", `18O`), ""),
+                ifelse(`32S` > 0, paste0("[32S]", `32S`), ""),
+                ifelse(`33S` > 0, paste0("[33S]", `33S`), ""),
+                ifelse(`34S` > 0, paste0("[34S]", `34S`), ""),
+                ifelse(`36S` > 0, paste0("[36S]", `36S`), "")
+        )
+        # Remove any leading or trailing spaces
+        str_trim(formula_iso)
+}
+
+calculate_haloperc <- function(Molecule_Formula) {
+        molform <- rcdk::get.formula(Molecule_Formula)
+        mw <- molform@mass
+        mw_halo <- as_tibble(molform@isotopes) |> 
+                mutate(mass = as.double(mass)) |> 
+                mutate(number = as.numeric(number)) |> 
+                mutate(Halogen = case_when(isoto == "Cl" ~ TRUE,
+                                           isoto == "Br" ~ TRUE,
+                                           isoto == "F" ~ TRUE,
+                                           isoto == "I" ~ TRUE,
+                                           .default = FALSE)) |> 
+                
+                filter(Halogen == TRUE) |> 
+                summarise(mw_halogens = sum(number * mass))  
+        Molecule_Halo_perc <- round(mw_halo$mw_halogens/mw*100, 0)
+        return(Molecule_Halo_perc)
+}
+
+
+
+# This function generates input for the Envipat function
+generateInput_Envipat <- function(data = data, Compounds = Compounds, Adduct_Ion = Adduct_Ion, 
+                                  TP = TP, Charge = Charge, Adduct_Annotation = Adduct_Annotation) {
+        
+        
+        data <- data |> 
+                mutate(Adduct_Ion = Adduct_Ion) |> 
+                mutate(Charge = Charge) |> 
+                mutate(Adduct_Annotation = Adduct_Annotation) |> 
+                mutate(Cl = case_when(
+                        Adduct_Ion == "-Cl" ~ Cl-1,
+                        Adduct_Ion == "-HCl" ~ Cl-1,
+                        Adduct_Ion == "+Cl" ~ Cl+1,
+                        Adduct_Ion == "-Cl-HCl" ~ Cl-2,
+                        Adduct_Ion == "-Cl-2HCl" ~ Cl-3,
+                        Adduct_Ion == "-Cl-3HCl" ~ Cl-4,
+                        Adduct_Ion == "-Cl-4HCl" ~ Cl-5,
+                        Adduct_Ion == "-2Cl-HCl" ~ Cl-3,
+                        .default = Cl)) |> 
+                mutate(H = case_when(
+                        Adduct_Ion == "-H" ~ H-1,
+                        Adduct_Ion == "-HCl" ~ H-1,
+                        Adduct_Ion == "-Cl-HCl" ~ H-1,
+                        Adduct_Ion == "-Cl-2HCl" ~ H-2,
+                        Adduct_Ion == "-Cl-3HCl" ~ H-3,
+                        Adduct_Ion == "-Cl-4HCl" ~ H-4,
+                        Adduct_Ion == "-2Cl-HCl" ~ H-1,
+                        .default = H)) |> 
+                mutate(H = case_when( #remove H if TP is chosen
+                        TP == "+OH" ~ H-1,
+                        TP == "+2OH" ~ H-2,
+                        TP == "+3OH" ~ H-3,
+                        TP == "+SO4" ~ H-1,
+                        .default = H)) |> 
+                mutate(Br = case_when(
+                        Adduct_Ion == "+Br" ~ 1,
+                        .default = 0
+                )) |> 
+                mutate(O = case_when(
+                        TP == "+OH" ~ 1,
+                        TP == "+2OH" ~ 2,
+                        TP == "+3OH" ~ 3,
+                        TP == "+SO4" ~ 4,
+                        .default = 0
+                )) |> 
+                mutate(S = case_when(
+                        TP == "+SO4" ~ 1,
+                        TRUE ~ 0
+                )) |> 
+                mutate(Adduct_Formula = create_formula(C, H, Cl, Br, S, O))|> 
+                rowwise() %>%
+                mutate(Molecule_Halo_perc = calculate_haloperc(Molecule_Formula)) |> 
+                ungroup() |> 
+                select(Molecule_Formula, Molecule_Halo_perc, Charge, Adduct_Ion, Adduct_Annotation, Adduct_Formula, C, H, Cl, Br, S, O)
+        
+        return(data)
+}

@@ -181,13 +181,15 @@ source("~/CPquant/test/CPxplorer_TPs/R/getAdduct.R")
 source("~/CPquant/test/CPxplorer_TPs/R/getSkyline.R")
 source("~/CPquant/test/CPxplorer_TPs/R/getAdduct_BCA.R")
 source("~/CPquant/test/CPxplorer_TPs/R/getSkyline_BCA.R")
-source("~/CPquant/test/CPxplorer_TPs/R/generateInput_Envipat.R")
+source("~/CPquant/test/CPxplorer_TPs/R/utils.R")
 
-selectedCompounds <- "PCA"
+#selectedCompounds <- "PCA"
+selectedCompounds <- "BCA"
+
 selectedAdducts <- "+Cl"
-selectedIonization <- "-"
+selectedCharge <- "-"
 #selectedTP <- "None"
-selectedTP <- "+OH"
+selectedTP <- "+SO4"
 
 Cmin <- 10
 Cmax  <- 12
@@ -195,27 +197,31 @@ Clmin <- 1
 Clmax <- 4
 Brmin <- 1
 Brmax <- 3
+C <- as.integer(Cmin:Cmax)
+Cl <- as.integer(Clmin:Clmax)
 Br <- as.integer(Brmin:Brmax)
 
 threshold <- 5
 MSresolution <- 60000
 
 i <- 1
-
-C <- as.integer(Cmin:Cmax)
-Cl <- as.integer(Clmin:Clmax)
+# j <- 1
 
 Compounds <- as.character(selectedCompounds)
 Adducts <- as.character(selectedAdducts)
-Ionization <- as.character(selectedIonization)
+Charge <- as.character(selectedCharge)
 TP <- as.character(selectedTP)
+Adduct_Ion = Adducts[i]
 
-Molecule_Annotation <- case_when(
-        TP == "None" ~ paste0("[", Compounds, Adducts, "]", Ionization),
-        TRUE ~ paste0("[", Compounds, TP, Adducts, "]", Ionization)
-)
-
-adduct_ions = Adducts[i]
+# 
+# CP_allions <- data.frame(Molecule_Formula = character())
+# 
+# for (i in seq_along(Adducts)) {
+#         input <- getAdduct(Compounds = Compounds[i], Adduct_Ion = Adducts[i], Charge = Charge[i], TP = TP[i], C = C, Cl = Cl, Clmax = Clmax, 
+#                            Br = Br, Brmax = Brmax, threshold = threshold)
+#                         CP_allions <- dplyr::full_join(CP_allions, input)
+#                 }
+#               
 
 
 ```
