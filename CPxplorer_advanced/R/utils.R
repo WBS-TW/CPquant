@@ -91,6 +91,7 @@ generateInput_Envipat <- function(data = data, Compounds = Compounds, Adduct_Ion
                 mutate(Adduct_Ion = Adduct_Ion) |> 
                 mutate(Charge = Charge) |> 
                 mutate(Adduct_Annotation = Adduct_Annotation) |> 
+                mutate(Compound_Class = Compounds) |> 
                 mutate(Cl = case_when(
                         Adduct_Ion == "-Cl" ~ Cl-1,
                         Adduct_Ion == "-HCl" ~ Cl-1,
@@ -135,7 +136,7 @@ generateInput_Envipat <- function(data = data, Compounds = Compounds, Adduct_Ion
                 rowwise() %>%
                 mutate(Molecule_Halo_perc = calculate_haloperc(Molecule_Formula)) |> 
                 ungroup() |> 
-                select(Molecule_Formula, Molecule_Halo_perc, Charge, Adduct_Ion, Adduct_Annotation, Adduct_Formula, C, H, Cl, Br, S, O)
+                select(Molecule_Formula, Molecule_Halo_perc, Charge, Compound_Class, Adduct_Ion, Adduct_Annotation, Adduct_Formula, C, H, Cl, Br, S, O)
         
         return(data)
 }

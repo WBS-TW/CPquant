@@ -95,6 +95,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
         for (j in seq_along(data$Molecule_Formula)) {
                 Adduct_Formula <- data$Adduct_Formula[j]
                 Molecule_Formula <- data$Molecule_Formula[j]
+                Compound_Class <- data$Compound_Class[j]
                 Charge <- data$Charge[j]
                 Molecule_Halo_perc <- data$Molecule_Halo_perc[j]
                 Adduct_Annotation <- data$Adduct_Annotation[j]
@@ -110,6 +111,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
                                                                         `16O`, `17O`, `18O`, `32S`, `33S`, `34S`, `36S`)) |> 
                         mutate(Molecule_Formula = Molecule_Formula) |>
                         mutate(Molecule_Halo_perc = Molecule_Halo_perc) |>
+                        mutate(Compound_Class = Compound_Class) |> 
                         mutate(Adduct_Annotation =  Adduct_Annotation) |>
                         mutate(Adduct_Formula =  Adduct_Formula) |>
                         mutate(Charge = Charge) |>
@@ -137,7 +139,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
                                 `13C` + (`37Cl`+`81Br` + `18O` + `34S`)*2 == 20 ~ "+20")) |> 
                         mutate(Adduct_Isotopologue = paste0(Adduct_Ion, " ", Isotopologue)) |>
                         rename(Rel_ab = abundance) |>
-                        select(Molecule_Formula, Molecule_Halo_perc, Charge, Adduct_Annotation, Adduct_Isotopologue, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, everything())
+                        select(Molecule_Formula, Molecule_Halo_perc, Compound_Class, Charge, Adduct_Annotation, Adduct_Isotopologue, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, everything())
                 data_ls[[j]] <- dat
         }
         

@@ -9,17 +9,16 @@ library(enviPat)
 library(markdown)
 
 data("isotopes")
-source("~/CPquant/test/CPxplorer_TPs/R/utils.R")
-source("~/CPquant/test/CPxplorer_TPs/R/getAdduct.R")
-source("~/CPquant/test/CPxplorer_TPs/R/getSkyline.R")
-source("~/CPquant/test/CPxplorer_TPs/R/getSkyline_BCA.R")
+source("~/R/utils.R")
+source("~/R/getAdduct.R")
+source("~/R/getSkyline.R")
 
 
 
 #--------------------------------UI function----------------------------------#
 
 ui <- shiny::navbarPage(
-        "CPXplorer",
+        "CPxplorer",
         theme = shinythemes::shinytheme('spacelab'),
         shiny::tabPanel("Initial settings",
                         shiny::fluidPage(shiny::sidebarLayout(
@@ -154,6 +153,7 @@ server = function(input, output, session) {
                 # function to get adducts or fragments
                 CP_allions <- data.frame(Molecule_Formula = character(), Molecule_Halo_perc = double())
                 
+                # nested for loop to get all combinations of Compounds, Adducts, TP
                 for (i in seq_along(Compounds)) {
                         progress$inc(1/length(Compounds), detail = paste0("Compound Class: ", Compounds[i], " . Please wait.."))
                         
@@ -355,101 +355,51 @@ server = function(input, output, session) {
         
         ############ go3: Skyline tab ############
         
-        CP_allions_skyline <- eventReactive(input$go3, {
-                
-                
-                # Create a Progress bar object
-                progress <- shiny::Progress$new()
-                
-                # Make sure it closes when we exit this reactive, even if there's an error
-                on.exit(progress$close())
-                progress$set(message = "Calculating", value = 0)
-                
-                Adducts <- as.character(selectedAdducts())
-                
-                # function to get Skyline adducts or fragments
-                CP_allions_sky <- data.frame(Molecule_Formula = character(), Halo_perc = double())
-                for (i in seq_along(Adducts)) {
-                        progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-                        
-                        if(str_detect(Adducts[i], "\\bBCA\\b")){
-                                input <- getSkyline_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
-                                                        Br = Br(), Brmax = Brmax(), threshold = threshold())
-                        } else {
-                                input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
-                        }
-                        
-                        CP_allions_sky <- rbind(CP_allions, input)
-                        
-                }
-                return(CP_allions_sky)
-        })
-        #The IonFormula is not activated yet since not compatible with [M-Cl]- (adduct not available in skyline)
+        # CP_allions_skyline <- eventReactive(input$go3, {
+        #         
+        #         
+        #         # Create a Progress bar object
+        #         progress <- shiny::Progress$new()
+        #         
+        #         # Make sure it closes when we exit this reactive, even if there's an error
+        #         on.exit(progress$close())
+        #         progress$set(message = "Calculating", value = 0)
+        #         
+        #         Adducts <- as.character(selectedAdducts())
+        #         
+        #         # function to get Skyline adducts or fragments
+        #         CP_allions_sky <- data.frame(Molecule_Formula = character(), Halo_perc = double())
+        #         for (i in seq_along(Adducts)) {
+        #                 progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
+        #                 
+        #                 if(str_detect(Adducts[i], "\\bBCA\\b")){
+        #                         input <- getSkyline_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
+        #                                                 Br = Br(), Brmax = Brmax(), threshold = threshold())
+        #                 } else {
+        #                         input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
+        #                 }
+        #                 
+        #                 CP_allions_sky <- rbind(CP_allions, input)
+        #                 
+        #         }
+        #         return(CP_allions_sky)
+        # })
+        #Removed  skylineoutput==IonFormula since not compatible with [M-Cl]- (adduct not available in skyline)
         shiny::observeEvent(input$go3, {
-                if(input$skylineoutput == "IonFormula"){
-                        CP_allions_skyline <- CP_allions_skyline() %>%
-                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
-                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
-                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")))) %>%
-                                rename(`Molecule Name` = Molecule_Formula) %>%
-                                mutate(`Molecular Formula` = case_when(
-                                        `37Cl` == 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`),
-                                        `37Cl` > 0 ~ paste0("C", `12C`, "H", `1H`, "Cl", `35Cl`, "Cl'", `37Cl`)
-                                )) %>%
-                                mutate(`Precursor Adduct` = str_replace(Adduct, "\\].*", "]")) %>%
-                                mutate(`Precursor Adduct` = str_replace(`Precursor Adduct`, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
-                                rename(Note = Adduct) %>%
-                                rename(`Precursor Charge` = Charge) %>%
-                                add_column(`Explicit Retention Time` = NA) %>%
-                                add_column(`Explicit Retention Time Window` = NA) %>%
-                                group_by(`Molecule Name`) |>
-                                mutate(`Label Type` = ifelse(Rel_ab == 100, "Quan", "Qual")) |> # choose the highest rel_ab ion as quan ion and the rest will be qual
-                                ungroup() |>
-                                select(`Molecule List Name`,
-                                       `Molecule Name`,
-                                       `Molecular Formula`,
-                                       `Precursor Adduct`,
-                                       `Precursor Charge`,
-                                       `Label Type`,
-                                       `Explicit Retention Time`,
-                                       `Explicit Retention Time Window`,
-                                       Note)
+
+                
+                if(input$skylineoutput == "mz"){
+ 
                         
-                        
-                        
-                        output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download only part of rows
-                                # Show data
-                                DT::datatable(CP_allions_skyline,
-                                              filter = "top", extensions = c("Buttons", "Scroller"),
-                                              options = list(scrollY = 650,
-                                                             scrollX = 500,
-                                                             deferRender = TRUE,
-                                                             scroller = TRUE,
-                                                             buttons = list(list(extend = "excel", filename = "Skyline_transition_list", title = NULL,
-                                                                                 exportOptions = list(
-                                                                                         modifier = list(page = "all")
-                                                                                 )),
-                                                                            list(extend = "csv", filename = "Skyline_transition_list", title = NULL,
-                                                                                 exportOptions = list(
-                                                                                         modifier = list(page = "all")
-                                                                                 )),
-                                                                            list(extend = "colvis", targets = 0, visible = FALSE)),
-                                                             dom = "lBfrtip",
-                                                             fixedColumns = TRUE),
-                                              rownames = FALSE)
-                        })
-                        
-                }else if(input$skylineoutput == "mz"){
-                        
-                        CP_allions_skyline2 <- CP_allions_glob() %>%
-                                mutate(`Molecule List Name` = case_when(str_detect(Adduct, "(?<=.)PCA(?=.)") == TRUE ~ paste0("PCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
-                                                                        str_detect(Adduct, "(?<=.)PCO(?=.)") == TRUE ~ paste0("PCO-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
-                                                                        str_detect(Adduct, "(?<=.)BCA(?=.)") == TRUE ~ paste0("BCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")))) %>%
+                        CP_allions_skyline <- CP_allions_glob() %>%
+                                mutate(`Molecule List Name` = case_when(Compound_Class == "PCA" ~ paste0("PCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
+                                                                        Compound_Class == "PCO" ~ paste0("PCO-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")),
+                                                                        Compound_Class == "BCA" ~ paste0("BCA-C", str_extract(Molecule_Formula, "(?<=C)\\d+(?=H)")))) %>%
                                 rename(`Molecule Name` = Molecule_Formula) %>%
                                 mutate(`Precursor m/z` = `m/z`) %>%
                                 # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>%
                                 # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
-                                rename(Note = Adduct) %>%
+                                rename(Note = Compound_Class) %>%
                                 rename(`Precursor Charge` = Charge) %>%
                                 add_column(`Explicit Retention Time` = NA) %>%
                                 add_column(`Explicit Retention Time Window` = NA) %>%
@@ -468,7 +418,7 @@ server = function(input, output, session) {
                         
                         output$Table3 <- DT::renderDT(server=FALSE,{ #need to keep server = FALSE otherwise excel download the visible rows of the table, but this will also give warning about large tables
                                 # Show data
-                                DT::datatable(CP_allions_skyline2,
+                                DT::datatable(CP_allions_skyline,
                                               filter = "top", extensions = c("Buttons", "Scroller"),
                                               options = list(scrollY = 650,
                                                              scrollX = 500,

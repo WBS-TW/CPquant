@@ -177,11 +177,10 @@ library(enviPat)
 library(markdown)
 
 data("isotopes")
-source("~/CPquant/test/CPxplorer_TPs/R/getAdduct.R")
-source("~/CPquant/test/CPxplorer_TPs/R/getSkyline.R")
-source("~/CPquant/test/CPxplorer_TPs/R/getAdduct_BCA.R")
-source("~/CPquant/test/CPxplorer_TPs/R/getSkyline_BCA.R")
-source("~/CPquant/test/CPxplorer_TPs/R/utils.R")
+source("~/CPquant/CPxplorer_advanced/R/getAdduct.R")
+source("~/CPquant/CPxplorer_advanced/R/getSkyline.R")
+#source("~/CPquant/CPxplorer_advanced/R/getSkyline_BCA.R")
+source("~/CPquant/CPxplorer_advanced/R/utils.R")
 
 #selectedCompounds <- "PCA"
 selectedCompounds <- "BCA"
