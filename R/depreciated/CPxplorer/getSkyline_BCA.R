@@ -2,7 +2,7 @@
 # Check how to write ion formulas and adduct descriptions: 
 # https://skyline.ms/_webdav/home/software/Skyline/@files/tutorials/Skyline%20Small%20Molecule%20Targets.pdf
 
-getSkyline_BrCl <- function(adduct_ions, C, Cl, Clmax, Br, Brmax, threshold) {
+getSkyline_BCA <- function(adduct_ions, C, Cl, Clmax, Br, Brmax, threshold) {
         
         ion_modes <- str_extract(adduct_ions, "(?<=\\]).{1}") # Using lookbehind assertion to extract ion mode
         fragment_ions <- str_extract(adduct_ions, "(?<=.{4}).+?(?=\\])") # extract after the 3rd character and before ]
