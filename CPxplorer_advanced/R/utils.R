@@ -84,14 +84,18 @@ calculate_haloperc <- function(Molecule_Formula) {
 
 # This function generates input for the Envipat function
 generateInput_Envipat <- function(data = data, Compounds = Compounds, Adduct_Ion = Adduct_Ion, 
-                                  TP = TP, Charge = Charge, Adduct_Annotation = Adduct_Annotation) {
+                                  TP = TP, Charge = Charge) {
         
         
         data <- data |> 
                 mutate(Adduct_Ion = Adduct_Ion) |> 
                 mutate(Charge = Charge) |> 
-                mutate(Adduct_Annotation = Adduct_Annotation) |> 
+                mutate(Adduct_Annotation = case_when(
+                        TP == "None" ~ paste0("[", Compounds, Adduct_Ion, "]", Charge),
+                        .default = paste0("[", Compounds, TP, Adduct_Ion, "]", Charge))) |> 
+                mutate(Adduct_Annotation = str_replace(Adduct_Annotation, "\\d$", "")) |> 
                 mutate(Compound_Class = Compounds) |> 
+                mutate(TP = TP) |> 
                 mutate(Cl = case_when(
                         Adduct_Ion == "-Cl" ~ Cl-1,
                         Adduct_Ion == "-HCl" ~ Cl-1,
@@ -111,32 +115,24 @@ generateInput_Envipat <- function(data = data, Compounds = Compounds, Adduct_Ion
                         Adduct_Ion == "-Cl-4HCl" ~ H-4,
                         Adduct_Ion == "-2Cl-HCl" ~ H-1,
                         .default = H)) |> 
-                mutate(H = case_when( #remove H if TP is chosen
-                        TP == "+OH" ~ H-1,
-                        TP == "+2OH" ~ H-2,
-                        TP == "+3OH" ~ H-3,
-                        TP == "+SO4" ~ H-1,
-                        .default = H)) |> 
-                mutate(Br = case_when(
-                        Adduct_Ion == "+Br" ~ 1,
-                        .default = 0
-                )) |> 
+                mutate(Br = ifelse(Compound_Class == "BCA", Br, 0)) |> 
+                mutate(Br = ifelse(Adduct_Ion == "+Br", Br+1, Br)) |> 
                 mutate(O = case_when(
                         TP == "+OH" ~ 1,
                         TP == "+2OH" ~ 2,
-                        TP == "+3OH" ~ 3,
                         TP == "+SO4" ~ 4,
+                        TP == "-Cl+OH" ~ 1,
+                        TP == "-2Cl+2OH" ~ 2,
                         .default = 0
                 )) |> 
                 mutate(S = case_when(
                         TP == "+SO4" ~ 1,
-                        TRUE ~ 0
-                )) |> 
+                        .default = 0)) |> 
                 mutate(Adduct_Formula = create_formula(C, H, Cl, Br, S, O))|> 
                 rowwise() %>%
                 mutate(Molecule_Halo_perc = calculate_haloperc(Molecule_Formula)) |> 
                 ungroup() |> 
-                select(Molecule_Formula, Molecule_Halo_perc, Charge, Compound_Class, Adduct_Ion, Adduct_Annotation, Adduct_Formula, C, H, Cl, Br, S, O)
+                select(Molecule_Formula, Molecule_Halo_perc, Charge, Compound_Class, TP, Adduct_Ion, Adduct_Annotation, Adduct_Formula, C, H, Cl, Br, S, O)
         
         return(data)
 }

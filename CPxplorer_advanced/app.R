@@ -7,11 +7,12 @@ library(plotly)
 library(crosstalk)
 library(enviPat)
 library(markdown)
+library(rcdk)
 
 data("isotopes")
-source("~/R/utils.R")
-source("~/R/getAdduct.R")
-source("~/R/getSkyline.R")
+source("./R/utils.R")
+source("./R/getAdduct.R")
+source("./R/getSkyline.R")
 
 
 
@@ -52,7 +53,7 @@ ui <- shiny::navbarPage(
                                                     width = NULL,
                                                     size = NULL),
                                         selectInput("TP", "Transformation product?",
-                                                    choices = c("None", "+OH", "+2OH", "+3OH", "+C2H2O2", "+SO4"),
+                                                    choices = c("None", "-Cl+OH", "-2Cl+2OH", "+OH", "+2OH", "+SO4"),
                                                     selected = "None",
                                                     multiple = TRUE,
                                                     selectize = TRUE,
@@ -355,40 +356,11 @@ server = function(input, output, session) {
         
         ############ go3: Skyline tab ############
         
-        # CP_allions_skyline <- eventReactive(input$go3, {
-        #         
-        #         
-        #         # Create a Progress bar object
-        #         progress <- shiny::Progress$new()
-        #         
-        #         # Make sure it closes when we exit this reactive, even if there's an error
-        #         on.exit(progress$close())
-        #         progress$set(message = "Calculating", value = 0)
-        #         
-        #         Adducts <- as.character(selectedAdducts())
-        #         
-        #         # function to get Skyline adducts or fragments
-        #         CP_allions_sky <- data.frame(Molecule_Formula = character(), Halo_perc = double())
-        #         for (i in seq_along(Adducts)) {
-        #                 progress$inc(1/length(Adducts), detail = paste0("Adduct: ", Adducts[i], " . Please wait.."))
-        #                 
-        #                 if(str_detect(Adducts[i], "\\bBCA\\b")){
-        #                         input <- getSkyline_BCA(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(),
-        #                                                 Br = Br(), Brmax = Brmax(), threshold = threshold())
-        #                 } else {
-        #                         input <- getSkyline(adduct_ions = Adducts[i], C = C(), Cl = Cl(), Clmax = Clmax(), threshold = threshold())
-        #                 }
-        #                 
-        #                 CP_allions_sky <- rbind(CP_allions, input)
-        #                 
-        #         }
-        #         return(CP_allions_sky)
-        # })
-        #Removed  skylineoutput==IonFormula since not compatible with [M-Cl]- (adduct not available in skyline)
+        
         shiny::observeEvent(input$go3, {
 
                 
-                if(input$skylineoutput == "mz"){
+                if(input$skylineoutput == "mz"){ #Removed  skylineoutput==IonFormula since not compatible with [M-Cl]- (adduct not available in skyline)
  
                         
                         CP_allions_skyline <- CP_allions_glob() %>%
@@ -399,7 +371,7 @@ server = function(input, output, session) {
                                 mutate(`Precursor m/z` = `m/z`) %>%
                                 # mutate(Note = str_replace(Adduct, "\\].*", "]")) %>%
                                 # mutate(Note = str_replace(Note, "(.+?(?=\\-))|(.+?(?=\\+))", "[M")) %>%
-                                rename(Note = Compound_Class) %>%
+                                mutate(Note = ifelse(TP == "None", Compound_Class, paste0(Compound_Class, TP))) %>%
                                 rename(`Precursor Charge` = Charge) %>%
                                 add_column(`Explicit Retention Time` = NA) %>%
                                 add_column(`Explicit Retention Time Window` = NA) %>%

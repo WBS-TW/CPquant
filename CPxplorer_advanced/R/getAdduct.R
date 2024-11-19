@@ -1,6 +1,6 @@
 
 
-getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax, threshold) {
+getAdduct <- function(Compounds, Adduct_Ion, TP, Charge, C, Cl, Clmax, Br, Brmax, threshold) {
         ####################################################################         
         # Regex to extract strings
         #################################################################### 
@@ -10,49 +10,72 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
                 data <- crossing(C, Cl) |> #set combinations of C and Cl
                         filter(C >= Cl) |> # filter so Cl dont exceed C atoms
                         filter(Cl <= Clmax) |> # limit chlorine atoms. 
-                        mutate(H = 2*C+2-Cl) |> # add H atoms
+                        mutate(H = case_when(# add H atoms
+                                TP == "None" ~ 2*C+2-Cl,
+                                TP == "+OH" ~ 2*C+2-Cl,
+                                TP == "+2OH" ~ 2*C+2-Cl,
+                                TP == "-Cl+OH" ~ 2*C+2-Cl+1,
+                                TP == "-2Cl+2OH" ~ 2*C+2-Cl+2,
+                                TP == "+SO4" ~ 2*C+2-Cl-1))  |> 
+                        mutate(Cl = case_when(
+                                TP == "-Cl+OH" ~ Cl-1,
+                                TP == "-2Cl+2OH" ~ Cl-2,
+                                .default = Cl)) |> 
+                        mutate(Molecule_Formula = paste0("C", C, "H", H, "Cl", Cl)) |> 
                         mutate(Molecule_Formula = case_when( #DOUBLE CHECK THE FORMULA IS CORRECT!!!!!
                                 TP == "None" ~ paste0("C", C, "H", H, "Cl", Cl),
                                 TP == "+OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O"),
                                 TP == "+2OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O2"),
-                                TP == "+3OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O3"),
-                                TP == "+C2H2O2" ~ paste0("C", C+2, "H", H+1, "Cl", Cl, "O2"),
-                                TP == "+SO4" ~ paste0("C", C, "H", H-1, "Cl", Cl, "SO4"))) |> 
-                        mutate(Adduct_Annotation = case_when(
-                                TP == "None" ~ paste0("[", Compounds, Adduct_Ion, "]", Charge),
-                                .default = paste0("[", Compounds, TP, Adduct_Ion, "]", Charge))) 
+                                TP == "-Cl+OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O"),
+                                TP == "-2Cl+2OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O2"),
+                                TP == "+SO4" ~ paste0("C", C, "H", H, "Cl", Cl, "SO4"))) 
+
         } else if (Compounds == "PCO") {
                 data <- crossing(C, Cl) |> 
                         filter(C >= Cl) |> 
                         filter(Cl <= Clmax) |> 
-                        mutate(H = 2*C-Cl) |> 
-                        mutate(Molecule_Formula = case_when(#DOUBLE CHECK IF THE FORMULA IS CORRECT!!!!!
+                        mutate(H = case_when(# add H atoms. 
+                                TP == "None" ~ 2*C-Cl, #PCO general formula 2*C-Cl
+                                TP == "+OH" ~ 2*C-Cl,
+                                TP == "+2OH" ~ 2*C-Cl,
+                                TP == "-Cl+OH" ~ 2*C-Cl+1,
+                                TP == "-2Cl+2OH" ~ 2*C-Cl+2,
+                                TP == "+SO4" ~ 2*C-Cl-1))  |> 
+                        mutate(Cl = case_when(
+                                TP == "-Cl+OH" ~ Cl-1,
+                                TP == "-2Cl+2OH" ~ Cl-2,
+                                .default = Cl)) |> 
+                        mutate(Molecule_Formula = paste0("C", C, "H", H, "Cl", Cl)) |> 
+                        mutate(Molecule_Formula = case_when( #DOUBLE CHECK THE FORMULA IS CORRECT!!!!!
                                 TP == "None" ~ paste0("C", C, "H", H, "Cl", Cl),
                                 TP == "+OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O"),
                                 TP == "+2OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O2"),
-                                TP == "+3OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O3"),
-                                TP == "+C2H2O2" ~ paste0("C", C+2, "H", H+1, "Cl", Cl, "O2"),
-                                TP == "+SO4" ~ paste0("C", C, "H", H-1, "Cl", Cl, "SO4"))) |> 
-                        mutate(Adduct_Annotation = case_when(
-                                TP == "None" ~ paste0("[", Compounds, Adduct_Ion, "]", Charge),
-                                .default =  paste0("[", Compounds, TP, Adduct_Ion, "]", Charge))) 
+                                TP == "-Cl+OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O"),
+                                TP == "-2Cl+2OH" ~ paste0("C", C, "H", H, "Cl", Cl, "O2"),
+                                TP == "+SO4" ~ paste0("C", C, "H", H, "Cl", Cl, "SO4"))) 
+                
         } else if (Compounds == "BCA") {
                 data <- crossing(C, Cl, Br) |>  #get combinations of C, Cl, Br
                         filter(C >= Cl) |>  # filter so Cl dont exceed C atoms
                         filter(Cl <= Clmax) |>  # limit chlorine atoms.
                         filter(Br <= Brmax) |> 
                         filter(Br + Cl <= C) |> 
-                        mutate(H = 2*C+2-Cl-Br) |>  # add H atoms
+                        mutate(H = case_when(# add H atoms. 
+                                TP == "None" ~ 2*C+2-Cl-Br, #BCA general formula
+                                TP == "+OH" ~ 2*C+2-Cl-Br,
+                                TP == "+2OH" ~ 2*C+2-Cl-Br,
+                                TP == "-Cl+OH" ~ 2*C+2-Cl-Br+1,
+                                TP == "-2Cl+2OH" ~ 2*C+2-Cl-Br+2,
+                                TP == "+SO4" ~ 2*C+2-Cl-Br-1))  |> 
+                        
                         mutate(Molecule_Formula = case_when( #DOUBLE CHECK THE FORMULA IS CORRECT!!!!!
                                 TP == "None" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br),
                                 TP == "+OH" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br, "O"),
                                 TP == "+2OH" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br, "O2"),
-                                TP == "+3OH" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br, "O3"),
-                                TP == "+C2H2O2" ~ paste0("C", C+2, "H", H+1, "Cl", Cl, "Br", Br, "O2"),
-                                TP == "+SO4" ~ paste0("C", C, "H", H-1, "Cl", Cl, "Br", Br, "SO4"))) |> 
-                        mutate(Adduct_Annotation = case_when(
-                                TP == "None" ~ paste0("[", Compounds, Adduct_Ion, "]", Charge),
-                                .default =  paste0("[", Compounds, TP, Adduct_Ion, "]", Charge)))   
+                                TP == "-Cl+OH" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br, "O"),
+                                TP == "-2Cl+2OH" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br, "O2"),
+                                TP == "+SO4" ~ paste0("C", C, "H", H, "Cl", Cl, "Br", Br, "SO4"))) 
+                
                 
         }
         
@@ -71,7 +94,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
         ####### generate input data for envipat based on adduct ions
         ####################################################################         
         
-        data <- generateInput_Envipat(data = data, Compounds = Compounds, Adduct_Ion = Adduct_Ion, TP = TP)
+        data <- generateInput_Envipat(data = data, Compounds = Compounds, Adduct_Ion = Adduct_Ion, TP = TP, Charge = Charge)
         
         # Remove formula without Cl after adduct formations
         data <- data |>
@@ -96,6 +119,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
                 Adduct_Formula <- data$Adduct_Formula[j]
                 Molecule_Formula <- data$Molecule_Formula[j]
                 Compound_Class <- data$Compound_Class[j]
+                TP <- data$TP[j]
                 Charge <- data$Charge[j]
                 Molecule_Halo_perc <- data$Molecule_Halo_perc[j]
                 Adduct_Annotation <- data$Adduct_Annotation[j]
@@ -112,6 +136,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
                         mutate(Molecule_Formula = Molecule_Formula) |>
                         mutate(Molecule_Halo_perc = Molecule_Halo_perc) |>
                         mutate(Compound_Class = Compound_Class) |> 
+                        mutate(TP = TP) |> 
                         mutate(Adduct_Annotation =  Adduct_Annotation) |>
                         mutate(Adduct_Formula =  Adduct_Formula) |>
                         mutate(Charge = Charge) |>
@@ -139,7 +164,7 @@ getAdduct <- function(Compounds, Adduct_Ion, Charge, TP, C, Cl, Clmax, Br, Brmax
                                 `13C` + (`37Cl`+`81Br` + `18O` + `34S`)*2 == 20 ~ "+20")) |> 
                         mutate(Adduct_Isotopologue = paste0(Adduct_Ion, " ", Isotopologue)) |>
                         rename(Rel_ab = abundance) |>
-                        select(Molecule_Formula, Molecule_Halo_perc, Compound_Class, Charge, Adduct_Annotation, Adduct_Isotopologue, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, everything())
+                        select(Molecule_Formula, Molecule_Halo_perc, Compound_Class, TP, Charge, Adduct_Annotation, Adduct_Isotopologue, Adduct_Formula, Isotopologue, Isotope_Formula, `m/z`, Rel_ab, `12C`, `13C`, `1H`, `2H`, `35Cl`, `37Cl`, everything())
                 data_ls[[j]] <- dat
         }
         

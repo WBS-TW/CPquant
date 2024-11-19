@@ -182,18 +182,20 @@ source("~/CPquant/CPxplorer_advanced/R/getSkyline.R")
 #source("~/CPquant/CPxplorer_advanced/R/getSkyline_BCA.R")
 source("~/CPquant/CPxplorer_advanced/R/utils.R")
 
-#selectedCompounds <- "PCA"
-selectedCompounds <- "BCA"
+selectedCompounds <- "PCA"
+#selectedCompounds <- "BCA"
 
-selectedAdducts <- "+Cl"
+selectedAdducts <- "-H"
+#selectedAdducts <- "+Cl"
 selectedCharge <- "-"
 #selectedTP <- "None"
-selectedTP <- "+SO4"
+selectedTP <- "+2OH"
+#selectedTP <- "-Cl+OH"
 
 Cmin <- 10
-Cmax  <- 12
-Clmin <- 1
-Clmax <- 4
+Cmax  <- 10
+Clmin <- 6
+Clmax <- 6
 Brmin <- 1
 Brmax <- 3
 C <- as.integer(Cmin:Cmax)
