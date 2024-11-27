@@ -1,17 +1,20 @@
 library(shiny)
 library(shinythemes)
 library(DT)
+library(plotly)
 library(tidyverse)
 library(readxl)
-library(plotly)
 library(crosstalk)
 library(enviPat)
 library(markdown)
-library(rcdk)
+# library(rJava)
+# library(rcdklibs)
+# library(rcdk)
+
 
 data("isotopes")
 source("./R/getAdduct.R")
-source("./R/getSkyline.R")
+#source("./R/getSkyline.R")
 source("./R/utils.R")
 
 

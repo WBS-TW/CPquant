@@ -62,23 +62,61 @@ create_formula_isotope <- function(`12C`,`13C`, `1H`,`2H`, `35Cl`, `37Cl`, `79Br
         str_trim(formula_iso)
 }
 
+# calculate_haloperc <- function(Molecule_Formula) {
+#         molform <- rcdk::get.formula(Molecule_Formula)
+#         mw <- molform@mass
+#         mw_halo <- as_tibble(molform@isotopes) |> 
+#                 mutate(mass = as.double(mass)) |> 
+#                 mutate(number = as.numeric(number)) |> 
+#                 mutate(Halogen = case_when(isoto == "Cl" ~ TRUE,
+#                                            isoto == "Br" ~ TRUE,
+#                                            isoto == "F" ~ TRUE,
+#                                            isoto == "I" ~ TRUE,
+#                                            .default = FALSE)) |> 
+#                 
+#                 filter(Halogen == TRUE) |> 
+#                 summarise(mw_halogens = sum(number * mass))  
+#         Molecule_Halo_perc <- round(mw_halo$mw_halogens/mw*100, 0)
+#         return(Molecule_Halo_perc)
+# }
+
 calculate_haloperc <- function(Molecule_Formula) {
-        molform <- rcdk::get.formula(Molecule_Formula)
-        mw <- molform@mass
-        mw_halo <- as_tibble(molform@isotopes) |> 
-                mutate(mass = as.double(mass)) |> 
-                mutate(number = as.numeric(number)) |> 
-                mutate(Halogen = case_when(isoto == "Cl" ~ TRUE,
-                                           isoto == "Br" ~ TRUE,
-                                           isoto == "F" ~ TRUE,
-                                           isoto == "I" ~ TRUE,
-                                           .default = FALSE)) |> 
-                
+        # Regular expression to extract atoms and their counts
+        pattern <- "([A-Z][a-z]*)(\\d*)"
+        mwtable <- tibble(Atom = c("H", "C", "O", "S", "Cl", "Br"), MW = c(1.00794, 12.011, 15.9994, 32.066, 35.4527, 79.904))
+        
+        # Extract matches
+        matches <- str_match_all(Molecule_Formula, pattern)[[1]]
+        
+        # Convert to a data frame for clarity
+        result <- data.frame(
+                Atom = matches[, 2],                     # Element symbols
+                Count = as.numeric(matches[, 3])         # Element counts
+        )
+        
+        # Replace missing counts (e.g., implicit "1") with 1
+        result$Count[is.na(result$Count)] <- 1
+        
+        result <- result |> 
+                left_join(mwtable, by = "Atom") |> 
+                mutate(MW_atoms = MW*Count) |> 
+                mutate(Halogen = case_when(Atom == "Cl" ~ TRUE,
+                                           Atom == "Br" ~ TRUE,
+                                           Atom == "F" ~ TRUE,
+                                           Atom == "I" ~ TRUE,
+                                           .default = FALSE))
+        
+        mw <- sum(result$MW_atoms)
+        
+        mw_halo <- result |> 
                 filter(Halogen == TRUE) |> 
-                summarise(mw_halogens = sum(number * mass))  
-        Molecule_Halo_perc <- round(mw_halo$mw_halogens/mw*100, 0)
+                summarise(sum(MW_atoms)) |> 
+                as.double()
+        
+        Molecule_Halo_perc <- round(mw_halo/mw*100, 0)
         return(Molecule_Halo_perc)
 }
+
 
 
 

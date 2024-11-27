@@ -1,3 +1,5 @@
+## THIS FUNCTION IS CURRENTLY NOT USED ##
+
 # Check how to write ion formulas and adduct descriptions: 
 # https://skyline.ms/_webdav/home/software/Skyline/@files/tutorials/Skyline%20Small%20Molecule%20Targets.pdf
 
